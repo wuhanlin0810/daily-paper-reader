@@ -25,3 +25,45 @@ subscriptions:
     stage: A
     diff_threshold_pct: 15
   keyword_recall_mode: or
+  intent_profiles:
+    - tag: MED MM
+      description: 查找关于医学多模态的文章
+      enabled: true
+      keywords:
+        - keyword: multimodal medical learning
+          keyword_cn: 医学多模态学习
+          query: multimodal machine learning in healthcare and medicine
+        - keyword: medical image fusion
+          keyword_cn: 医学图像融合
+          query: fusion techniques for multi-modal medical imaging
+        - keyword: cross-modal retrieval
+          keyword_cn: 跨模态检索
+          query: cross-modal retrieval and alignment in medical domain
+        - keyword: multimodal transformers
+          keyword_cn: 多模态Transformer
+          query: transformer architectures for multimodal medical data
+        - keyword: multimodal diagnosis
+          keyword_cn: 多模态诊断
+          query: diagnostic systems using multimodal data sources
+      intent_queries:
+        - query: recent advances in multimodal medical image analysis
+          query_cn: 医学多模态图像分析的最新进展
+          enabled: true
+          source: manual
+          note: ''
+        - query: survey of multimodal deep learning in healthcare
+          query_cn: 医疗保健中多模态深度学习的综述
+          enabled: true
+          source: manual
+          note: ''
+        - query: multimodal foundation models for medical applications
+          query_cn: 医学应用的多模态基础模型
+          enabled: true
+          source: manual
+          note: ''
+        - query: challenges in multimodal medical data fusion and alignment
+          query_cn: 医学多模态数据融合与对齐的挑战
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-03-13T02:27:07.960Z'
