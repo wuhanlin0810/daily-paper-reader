@@ -1,0 +1,283 @@
+Title: DMD-augmented Unpaired Neural Schr\"odinger Bridge for Ultra-Low Field MRI Enhancement
+
+URL Source: https://arxiv.org/pdf/2603.03769v2
+
+Published Time: Fri, 06 Mar 2026 01:28:07 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+# DMD-augmented Unpaired Neural Schrödinger Bridge for Ultra-Low Field MRI Enhancement 
+
+Youngmin Kim 1*, Jaeyun Shin 2*, Jeongchan Kim 2*, Taehoon Lee 2,Jaemin Kim 2, Peter Hsu 3, Jelle Veraart 3, and Jong Chul Ye 2 
+
+> 1
+
+Korea University, Seoul, Republic of Korea 
+
+zeromin03@korea.ac.kr  
+
+> 2
+
+KAIST, Daejeon, Republic of Korea 
+
+{jaeyun.shin, jchan.kim, dlxogns0128, kjm981995, jong.ye}@kaist.ac.kr  
+
+> 3
+
+NYU Langone Health, New York, NY, USA 
+
+{peter.hsu, jelle.veraart}@nyulangone.org 
+
+> *
+
+These authors contributed equally. 
+
+Abstract. Ultra-Low-Field (64 mT) brain MRI improves accessibility but suffers from reduced image quality compared to 3 T. As paired 64 mT–3 T scans are scarce, we propose an unpaired 64 mT →3 T trans-lation framework that enhances realism while preserving anatomy. Our method builds upon the Unpaired Neural Schrödinger Bridge (UNSB) with multi-step refinement. To strengthen target distribution alignment, we augment the adversarial objective with DMD2-style diffusion-guided distribution matching using a frozen 3T diffusion teacher. To explic-itly constrain global structure beyond patch-level correspondence, we combine PatchNCE with an Anatomical Structure Preservation (ASP) regularizer that enforces soft foreground–background consistency and boundary-aware constraints. Evaluated on two disjoint cohorts, the proposed framework achieves an improved realism–structure trade-off, enhancing distribution-level realism on unpaired benchmarks while increasing structural fidelity on the paired cohort compared to unpaired baselines. 
+
+Keywords: Low-field MRI · Unpaired Translation · Schrödinger Bridge 
+
+· Diffusion Guidance 
+
+## 1 Introduction 
+
+Ultra-Low-Field (ULF) MRI systems (e.g., 64 mT) increase accessibility by re-ducing infrastructure requirements compared to conventional high-field scanners such as 3T [1, 2]. However, the lower field strength leads to a low signal-to-noise ratio (SNR), which blurs anatomical structures and weakens tissue contrast. These degradations reduce the reliability of downstream clinical analysis [1, 3]. To address this gap, there is a strong motivation to translate 64 mT scans into 3T-like images. Most prior works rely on paired supervision [4]. While paired learning provides stable optimization, acquiring spatially registered 64 mT–3 T  
+
+> arXiv:2603.03769v2 [cs.CV] 5 Mar 2026 2Y. Kim et al.
+
+scan pairs is challenging and is further complicated by protocol variability. Un-paired translation offers a practical alternative by removing the need for corre-spondence [5]. However, unpaired models are prone to anatomical distortion or structural hallucination. In medical imaging, where decisions depend on faithful structural representation, preserving subject-specific anatomy is essential [6]. To address this limitation, we build upon the UNSB (Unpaired Neural Schrödinger Bridge) formulation [7] for unpaired 64mT →3T translation. While UNSB enables distributional transport between domains, its alignment to the target distribution is primarily driven by a single discriminator. This adversarial signal is insufficient to capture the full complexity of 3T imaging characteristics, including subtle tissue contrast and fine-grained anatomical details. To provide stronger target-domain guidance, we incorporate DMD2-style diffusion-guided distribution matching [8] using a teacher diffusion model pre-trained on real 3T scans. The teacher supplies informative distribution-level gra-dients, encouraging generated images to better align with the authentic target manifold while preserving structural details [9]. 
+
+## 2 Related Works 
+
+Improved Distribution Matching Distillation (DMD2) [8] introduces a diffusion-guided objective for aligning a generator distribution with a target real distri-bution across multiple diffusion noise levels. DMD2 leverages score differences computed from a frozen real-data diffusion teacher and a trainable fake diffusion critic, providing informative gradients. Let F (·, τ ) denote the forward diffusion process at noise level τ . Given a generated sample ˆy = Gθ (x) produced by a generator Gθ , the diffused sample at noise level τ is defined as u = F (ˆ y, τ ). DMD2 minimizes the expected KL divergence between the distributions of noisy real and noisy generated (fake) samples at diffusion level τ :
+
+∇θ LDMD2 (θ) = Eτ [∇θ KL( pfake ,τ ∥ preal ,τ )] . (1) Expanding the KL divergence and applying the chain rule yields 
+
+∇θ KL( pfake ,τ ∥ preal ,τ ) = Eu∼pfake ,τ 
+
+h
+
+∇θ
+
+
+
+log pfake ,τ (u) − log preal ,τ (u)
+
+i 
+
+= − Eu∼pfake ,τ 
+
+
+
+sreal (u, τ ) − sfake (u, τ )
+
+ ∂u
+
+∂θ 
+
+
+
+, (2) where sreal (u, τ ) = ∇u log preal ,τ (u) and sfake (u, τ ) = ∇u log pfake ,τ (u). The real score sreal (·, τ ) is approximated by a frozen diffusion teacher μreal trained on the target real data, and sfake (·, τ ) is approximated by a fake diffusion critic 
+
+μfake with parameters η that is dynamically updated during training to track the generator’s distribution [8]. Our goal is to synergistically incorporate DMD2 into the unpaired neural Schrödinger bridge for ULF-MRI enhancement without matched high field MRI data. DMD-augmented UNSB for Ultra-Low Field MRI Enhancement 3Score Diff               
+
+> Input 64mT
+> 𝒙 𝟎
+> Output 3T
+> 𝒙 𝟏
+> Single -step Refinement Module
+> Predict
+> Target
+> Generator
+> 𝑮 𝜽 (𝒙 𝒕𝒌 ,𝒕 𝒌 )
+> ×𝒔 (𝒕 𝒋 +𝟏 )
+> ×(𝟏 −𝒔 (𝒕 𝒋 +𝟏 ))
+> 𝑵 (𝟎 ,𝝈 𝒋 +𝟏 𝑰 )
+> Δ𝜽 𝑳 : Loss for Generator 𝐺 𝜃
+> Δ𝜽 𝑳 : Loss for Fake Critic 𝜇 𝑓𝑎𝑘𝑒
+> －
+> Δ𝜽 𝑳 𝑫𝑴𝑫𝟐
+> Forward
+> Diffusion
+> Δ𝜇 𝑓𝑎𝑘𝑒 𝑳 𝑫𝑴𝑫𝟐
+> －
+> 𝒙 𝒕 𝒌 +𝟏
+> 𝒙 𝒕 𝒌
+> (A) Main Inference Loop
+> Feature -level
+> Consistency
+> Δ𝜃 𝐿 𝑁𝐶𝐸
+> Δ𝜽 𝑳 𝑺𝑩
+> Bridge
+> Consistency
+> ×𝑵 𝒔𝒕𝒆𝒑𝒔
+> Frozen Real
+> 3T Teacher
+> 𝜇 𝑟𝑒𝑎𝑙
+> Trainable
+> Fake Critic
+> 𝜇 𝑓𝑎𝑘𝑒
+> Stochastic
+> Interpolation
+> 𝜖 Diff
+> Trained on
+> Real 3T
+> Δ𝜽 𝑳 𝑹 𝒆𝒈
+> Anatomical
+> Consistency
+> Δ𝜃 𝐿 𝐴𝑆𝑃
+> (B) Main Training Stage: DMD2 -Guided Schrödinger Bridge
+> +
+
+Fig. 1. Overview. The proposed framework builds upon UNSB to perform multi-step 64 mT →3 T translation. During training, DMD2-based diffusion-guided distribution alignment using a frozen 3T teacher and a trainable fake critic augments adversarial supervision. Structural fidelity is enforced through combined PatchNCE and ASP reg-ularization, which constrains anatomical consistency. 
+
+## 3 Method: DMD2-augmented UNSB 
+
+We consider unpaired translation from low-field 64mT brain MRI to high-field 3T MRI. Let x ∼ X and y ∼ Y denote the domains of 64mT and 3T scans, respectively. Each sample is represented as a 3-channel 2D axial slice to leverage a pre-trained backbone originally optimized for RGB images., and we use the same channel construction for both source and target: 
+
+x = [ xT1 , x T2 , x T1 ], y = [ yT1 , y T2 , y T1 ].
+
+UNSB Formulation. We upon the Unpaired Neural Schrödinger Bridge (UNSB) [7], which formulates translation as a stochastic transport between source and target distributions. The Schrödinger Bridge (SB) models this trans-port through a sequence of intermediate refinement states, enabling gradual distribution alignment instead of a direct one-step mapping. Such progressive re-finement is particularly suitable for medical image translation, where preserving anatomical structure is critical. Given an input low-field slice x, we discretize the SB time interval t ∈ [0 , 1] 
+
+into K refinement steps with a grid 0 = t0 < t 1 < · · · < t K = 1 , and initialize the trajectory as xt0 := x. At each step k = 0 , · · · , K − 1, the generator predicts a target-domain sample conditioned on the current intermediate state: 
+
+ˆx(k)1 = Gθ (xtk , t k) . (3) 4 Y. Kim et al. 
+
+The next intermediate state is then obtained by stochastically interpolating be-tween the current state xtk and the predicted target sample ˆx(k)1 :
+
+xtk+1 = (1 − αk) xtk + αk ˆx(k)1 + σk εk, εk ∼ N (0, I), (4) for k = 0 , . . . , K − 1. Here αk := tk+1 −tk 
+
+> 1−tk
+
+and σk follow the Gaussian bridge schedule used in UNSB, and εk denotes injected stochasticity (e.g., Gaussian noise) used during training. At inference, we set εi = 0 to obtain deterministic refinement and preserve anatomical consistency. The final translated output is given by the last target prediction, ˆy = ˆ x(K−1) 1 . For each SB refinement step i,UNSB optimizes the following objective: 
+
+LUNSB (θ, k ) := LAdv (θ, k ) + λSB LSB (θ, k ) + λReg LReg (θ, k ), (5) where LAdv is the adversarial distribution-matching term, LSB is the SB loss, and LReg is a structure-preserving regularizer using PatchNCE [7]. In this work, we retain the multi-step stochastic transport formulation of UNSB while strengthening the adversarial alignment LAdv and structural regu-larization LReg for ultra-low-field to high-field MRI translation. 
+
+DMD2 Augmented Adversarial Loss. Instead of relying solely on a dis-criminator operating on the final output, we augment the adversarial objective with diffusion-guided distribution matching based on DMD2 (Sec. 2) at each refinement step. Specifically, given the intermediate state xtk at step k, the gen-erator predicts the target-domain sample ˆyk := ˆ x(k)1 = Gθ (xtk , t k), which we plug into the DMD2 gradient formulation (1). To steer the generated distribu-tion toward the high-field domain Y, the true score sreal (·, τ ) is approximated by a frozen diffusion teacher μreal pre-trained on real 3T brain MRI data. The step-wise DMD2 objective minimizes the expected KL divergence between the diffused intermediate predictions and the diffused real 3T distribution: 
+
+LDM (θ, k ) = LAdv (θ, k ) + LDMD2 (θ, t k),
+
+LDMD2 (θ, t k) = Extk , τ 
+
+h
+
+KL 
+
+
+
+pfake ,τ p(3T) real ,τ 
+
+i 
+
+.
+
+(6) By dynamically updating the fake diffusion critic μfake , the generator receives score-based gradients that complement the adversarial signal and promote real-istic 3T tissue contrasts throughout the refinement trajectory. 
+
+Regularization for Anatomical Structure Preservation. In unpaired MRI translation, enforcing only patch-level correspondence can lead to morphologi-cal artifacts, such as foreground-background leakage or boundary drift. While PatchNCE in original UNSB formulation (5) promotes patch-level consistency, it does not explicitly constrain global foreground separation or boundary align-ment. To address this limitation, we introduce an Anatomical Structure Preser-vation (ASP) regularizer that constrains the generated sample to follow the foreground–background structure of the original ULF slice. DMD-augmented UNSB for Ultra-Low Field MRI Enhancement 5
+
+We first consider foreground preservation. Let set x01 = (clip( x, −1, 1)+1) /2
+
+as a normalized input and define the soft mask function: 
+
+m(x) = σ
+
+ x01 − τm
+
+sm
+
+
+
+, (6) where τm and sm control the mask threshold and its softness, and σ(·) represents the sigmoid function. We then set min = m(x) and mout = m(ˆ yk), where ˆyk =
+
+Gθ (xtk , t k). From min , we construct a trimap with confident foreground and background regions using thresholds τfg and τbg :
+
+mcore = I[min > τ fg ], mbg = I[min < τ bg ]. (7) For boundary preservation, we use a Normalized Surface Distance (NSD)-style boundary precision term [10]. Let bout be a boundary map extracted from the output soft mask mout . We compute a distance transform d ∈ RH×W to the boundary of the input mask min , so that d = 0 on the boundary. The parameters 
+
+t and γ control the tolerance and softness of the constraint, respectively. We compute the ratio of the pixels of the boundary bout that lie within distance t of the input boundary via the sigmoid gate, and penalize the complement of this inlier ratio to enforce tight boundary alignment. The ASP loss combines (i) a trimap-based mask-consistency term using weighted Binary Cross Entropy (BCE) on confident regions, and (ii) a boundary-aware constraint that penalizes edges far from the input boundary: 
+
+LASP = [BCE( mout , 1; mcore ) + BCE( mout , 0; mbg )] 
+
+| {z }
+
+> trimap mask consistency
+
++
+
+1 −
+
+P bout σ
+
+ t−dγ
+
+P bout 
+
+| {z }
+
+> boundary-aware (NSD-style)
+
+.
+
+(8) Finally, we combine PatchNCE with ASP to form the regularizer: 
+
+LReg = LPatchNCE + LASP . (9) 
+
+Overall Objective. By combining the aforementioned components, the overall objective optimized at each SB refinement step k is defined as: 
+
+LTotal (θ, k ) = λDM LDM (θ, k ) + λSB LSB ,k (θ, k ) + λReg LReg (θ, k ), (10) where LSB denotes the standard Schrödinger Bridge matching loss that aligns the stochastic trajectories [7], and λDMD2 , λSB , λReg are hyperparameters controlling the relative importance of each term. To stabilize optimization of the DMD2 objective, we employ a two time-scale update rule (TTUR) and an auxiliary GAN classifier following DMD2 [8]. The overview of our framework is illustrated in Fig. 1. 6 Y. Kim et al. 
+
+## 4 Experiments 
+
+Datasets. We use two independent cohorts: 64mT brain MRI (Site A, n = 86 )from a public Zenodo dataset [11] and 3T brain MRI (Site B, n = 181 ) from the IXI Hammersmith Hospital 3 T subset [12], each providing T1w/T2w volumes. For unpaired training, we sample 64 mT inputs from the Zenodo training split and 3 T targets from the full IXI cohort as the target-domain pool. We evaluate on the held-out Zenodo test split ( n = 5 ), which provides paired 64 mT–3 T scans; on this set, we report full-reference paired metrics using the paired 3 T scans and additionally compute unpaired metrics on the translated outputs, with distribution-level realism assessed against the IXI 3 T pool. 
+
+Protocol. We apply subject-wise brain masking (skull stripping) to focus on the brain region. Registration is performed using ANTsPy [13]. Within each domain, we register T2 →T1 per subject to ensure intra-subject consistency. For geometric normalization, we register all 3 T volumes to a fixed 64 mT reference subject selected from the Zenodo training split (3 T →64 mT). 64 mT volumes are kept in their native spaces after skull stripping. We use subject-level splits for the 64 mT cohort (81/5 train/test) to avoid slice leakage, while the IXI cohort is used only as the target-domain pool. 
+
+Baselines. We compare against representative unpaired translation methods, including GAN-based models: CycleGAN [14], CUT [15], RegGAN [18], and diffusion-based models: SDEdit [16], SynDiff [17], INR-Based [19], and UNSB [7]. When available, we use official implementations and apply a unified pre-processing and evaluation protocol. We also evaluate UNSB + DMD2 and other variations of our method using same hyperparameter settings. 
+
+Unpaired evaluation. Following the INR-based protocol [19], we report no-reference perceptual quality (PIQE [20]) computed within the brain mask. To quantify target-domain realism at the distribution level, we additionally report FID [21] and KID [22] in a medical feature space using a frozen 3 T-domain encoder trained on 3 T training data only, as well as Rad-FID [23] computed using a frozen radiology-domain encoder trained on 3 T training data, analogous to FID. All unpaired metrics are computed on the held-out unpaired test set with subject-wise aggregation. 
+
+Paired evaluation. Although all models are trained strictly in an unpaired manner, it is important to assess how effective the learned translation is when applied to real paired data. To this end, we additionally evaluate full-reference fidelity on a small independent cohort of patients for whom paired 64 mT–3 T scans are available. This paired cohort is disjoint from all training data and is used only for testing. We report PSNR [24] and MS-SSIM [25] between the trans-lated outputs and the corresponding 3 T targets. To avoid slice-count imbalance, we first average each metric over slices per subject and then report the mean across subjects. DMD-augmented UNSB for Ultra-Low Field MRI Enhancement 7
+
+Table 1. Quantitative evaluation. (A) Unpaired test metrics. (B) Paired test met-rics (Arrows indicate better.) Bold : best, Underline: second best. 
+
+(A) Unpaired test-set evaluation Method Rad-FID ↓ FID ↓ KID ↓ PIQE ↓
+
+CycleGAN [14] 0.3551 26.5839 0.0073 37.8657 CUT [15] 0.3011 23.0661 0.0070 47.4585 SDEdit [16] 0.5276 28.3546 0.0120 49.3573 SynDiff [17] 0.9415 46.6598 0.0261 36.7951 RegGAN [18] 0.6595 25.2079 0.0048 34.3080 
+
+INR-Based [19] 1.2599 69.3590 0.0429 52.5423 UNSB [7] 0.2688 19.8965 0.0029 54.9813 UNSB + ASP 0.2596 20.5324 0.0048 50.7232 UNSB + DMD2 0.2427 19.2904 0.0034 47.1204 
+
+Ours 0.2516 18.9950 0.0031 48.4852 
+
+(B) Paired evaluation (independent cohort) Method MS-SSIM(T1) ↑ PSNR(T1) ↑ MS-SSIM(T2) ↑ PSNR(T2) ↑
+
+CycleGAN [14] 0.9204 23.3010 0.8926 22.5735 CUT [15] 0.9046 22.4057 0.8870 22.6232 SDEdit [16] 0.5478 14.0735 0.5297 16.4094 SynDiff [17] 0.7712 18.3572 0.7166 18.7577 RegGAN [18] 0.7062 16.7101 0.7000 18.8759 INR-Based [19] 0.8618 19.9516 0.8926 25.2925 
+
+UNSB [7] 0.9223 23.4586 0.8952 22.8230 UNSB + ASP 0.9231 23.1991 0.9037 22.7681 UNSB + DMD2 0.9336 23.8217 0.9025 23.1992 
+
+Ours 0.9345 24.0523 0.9083 23.0436 
+
+## 5 Experimental Results 
+
+Quantitative Results. We summarize the quantitative results in Table 1. In the unpaired setting (Table 1A), our method achieves the best FID and compet-itive scores on the remaining metrics, indicating improved target-domain realism without sacrificing structural consistency. On the independent paired cohort (Ta-ble 1B), we further observe the highest PSNR and MS-SSIM on T1 and strong performance on T2. Table 1 also includes ablations on top of UNSB, showing that DMD2 strengthens target-domain alignment and that the full model pro-vides the best overall realism–fidelity trade-off. 
+
+Qualitative Results. Figure 2 compares representative unpaired and paired test cases using full field-of-view and zoomed crops. Our method yields sharper tissue interfaces and more realistic 3T-like textures while preserving input-consistent anatomy, whereas baselines may over-smooth or introduce artifacts or hallucinated edges near fine boundaries. 8 Y. Kim et al. CUT    
+
+> CycleGAN
+> 64mT
+> UNSB
+> Ours
+> Target (3T)
+> T1 T2 T1 T2
+
+Fig. 2. Qualitative comparison on the test set. The figure shows two different slices extracted from distinct subjects within the test set. Rows: 64mT input, CUT, CycleGAN, UNSB, Ours, and Target (3T). Columns: T1/T2 and T1/T2 . 
+
+## 6 Conclusion 
+
+We proposed a structure-preserving unpaired 64 mT →3 T MRI translation framework based on a Schrödinger Bridge. By augmenting the UNSB adversar-DMD-augmented UNSB for Ultra-Low Field MRI Enhancement 9
+
+ial objective with DMD2, the model achieves improved alignment to the target distribution. In addition, the ASP loss constrains foreground separation and boundary consistency, promoting faithful structural reconstruction. Extensive evaluation demonstrates improved distribution-level realism on unpaired bench-marks and enhanced full-reference fidelity on an independent paired cohort, indicating a favorable balance between perceptual realism and anatomical integrity. A current limitation is the 2D slice-based design, which does not explicitly model volumetric context, introducing inter-slice inconsistencies. Future work will extend the framework to incorporate 3D context and explicit volumetric consistency constraints. 
+
+## References 
+
+1. Thomas Arnold, Colbey Freeman, and Joel Stein. Low-field mri: Clinical promise and challenges. Journal of Magnetic Resonance Imaging , 57:25–44, 09 2022. 2. Adrienne Campbell-Washburn, Kathryn Keenan, Peng Hu, John Mugler, Andrew Webb, Johnes Obungoloch, Kevin Sheth, Jürgen Hennig, Matthew Rosen, Najat Salameh, Daniel Sodickson, Joel Stein, José Marques, and Orlando Simonetti. Low-field mri: A report on the 2022 ismrm workshop. Magnetic Resonance in Medicine ,90, 06 2023. 3. Chloe DesRoche, Ana Johnson, Elizabeth Hore, Elaine Innes, Ian Silver, Donatella Tampieri, Benjamin Kwan, Johanna Jimenez, J Boyd, and Omar Islam. Feasibility and cost analysis of portable mri implementation in a remote setting in canada. 
+
+The Canadian journal of neurological sciences. Le journal canadien des sciences neurologiques , 51:1–27, 07 2023. 4. Alfredo Lucas, Thomas Campbell Arnold, Serhat V Okar, Chetan Vadali, Karan D Kawatra, Zheng Ren, Quy Cao, Russell T Shinohara, Matthew K Schindler, Kathryn A Davis, et al. Multisequence 3-t image synthesis from 64-mt low-field-strength mri using generative adversarial networks in multiple sclerosis. Radiology ,315(1):e233529, 2025. 5. Marc S. Seibel, Hristina Uzunova, Timo Kepp, and Heinz Handels. Anatomical conditioning for contrastive unpaired image-to-image translation of optical coher-ence tomography images, 2024. 6. Joseph Cohen, Margaux Luck, and Sina Honari. Distribution Matching Losses Can Hallucinate Features in Medical Image Translation , pages 529–536. 09 2018. 7. Beomsu Kim, Gihyun Kwon, Kwanyoung Kim, and Jong Chul Ye. Unpaired image-to-image translation via neural schr \" odinger bridge. arXiv preprint arXiv:2305.15086 , 2023. 8. Tianwei Yin, Michaël Gharbi, Taesung Park, Richard Zhang, Eli Shechtman, Fredo Durand, and Bill Freeman. Improved distribution matching distillation for fast image synthesis. Advances in neural information processing systems , 37:47455– 47487, 2024. 9. Tianwei Yin, Michaël Gharbi, Richard Zhang, Eli Shechtman, Fredo Durand, William T. Freeman, and Taesung Park. One-step diffusion with distribution matching distillation, 2024. 10. Michela Antonelli, Annika Reinke, Spyridon Bakas, Keyvan Farahani, Annette Kopp-Schneider, Bennett A. Landman, Geert Litjens, Bjoern Menze, Olaf Ron-neberger, Ronald M. Summers, Bram van Ginneken, Michel Bilello, Patrick Bilic, 10 Y. Kim et al. Patrick F. Christ, Richard K. G. Do, Marc J. Gollub, Stephan H. Heckers, Henkjan Huisman, William R. Jarnagin, Maureen K. McHugo, Sandy Napel, Jennifer S. Go-lia Pernicka, Kawal Rhode, Catalina Tobon-Gomez, Eugene Vorontsov, James A. Meakin, Sebastien Ourselin, Manuel Wiesenfarth, Pablo Arbeláez, Byeonguk Bae, Sihong Chen, Laura Daza, Jianjiang Feng, Baochun He, Fabian Isensee, Yuan-feng Ji, Fucang Jia, Ildoo Kim, Klaus Maier-Hein, Dorit Merhof, Akshay Pai, Beomhee Park, Mathias Perslev, Ramin Rezaiifar, Oliver Rippel, Ignacio Sara-sua, Wei Shen, Jaemin Son, Christian Wachinger, Liansheng Wang, Yan Wang, Yingda Xia, Daguang Xu, Zhanwei Xu, Yefeng Zheng, Amber L. Simpson, Lena Maier-Hein, and M. Jorge Cardoso. The medical segmentation decathlon. Nature Communications , 13(1), July 2022. 11. Ruben van den Broek, Beatrice Lena, and andrew webb. Paired 64mt and 3t brain mri scans of healthy subjects for neuroimaging research, May 2024. 12. Ixi dataset. https://brain-development.org/ixi-dataset/. Accessed: 2026-02-26. 13. Nicholas Tustison, Philip Cook, Andrew Holbrook, Hans Johnson, John Muschelli, Gabriel Devenyi, Jeffrey Duda, Sandhitsu Das, Nicholas Cullen, Daniel Gillen, Michael Yassa, James Stone, James Gee, and Brian Avants. The antsx ecosystem for quantitative biological and medical imaging. Scientific Reports , 11, 04 2021. 14. Jun-Yan Zhu, Taesung Park, Phillip Isola, and Alexei A. Efros. Unpaired image-to-image translation using cycle-consistent adversarial networks, 2020. 15. Taesung Park, Alexei A. Efros, Richard Zhang, and Jun-Yan Zhu. Contrastive learning for unpaired image-to-image translation, 2020. 16. Chenlin Meng, Yutong He, Yang Song, Jiaming Song, Jiajun Wu, Jun-Yan Zhu, and Stefano Ermon. Sdedit: Guided image synthesis and editing with stochastic differential equations, 2022. 17. Muzaffer Özbey, Onat Dalmaz, Salman UH Dar, Hasan A Bedel, Şaban Özturk, Alper Güngör, and Tolga Çukur. Unsupervised medical image translation with adversarial diffusion models, 2023. 18. Lingke Kong, Chenyu Lian, Detian Huang, Zhenjiang Li, Yanle Hu, and Qichao Zhou. Breaking the dilemma of medical image-to-image translation, 2021. 19. Kh Tohidul Islam, Mevan Ekanayake, and Zhaolin Chen. Ultra-low-field mri en-hancement via inr-based style transfer. In International Conference on Medical Image Computing and Computer-Assisted Intervention , pages 597–607. Springer, 2025. 20. N Venkatanath, D Praneeth, Bh M Chandrasekhar, Sumohana S Channappayya, and Swarup S Medasani. Blind image quality evaluation using perception based features. In 2015 Twenty First National Conference on Communications (NCC) ,pages 1–6. IEEE, 2015. 21. Martin Heusel, Hubert Ramsauer, Thomas Unterthiner, Bernhard Nessler, and Sepp Hochreiter. Gans trained by a two time-scale update rule converge to a local nash equilibrium, 2018. 22. Mikołaj Bińkowski, Danica J. Sutherland, Michael Arbel, and Arthur Gretton. Demystifying mmd gans, 2021. 23. McKell Woodland, Austin Castelo, Mais Al Taie, Jessica Albuquerque Mar-ques Silva, Mohamed Eltaher, Frank Mohn, Alexander Shieh, Suprateek Kundu, Joshua P. Yung, Ankit B. Patel, and Kristy K. Brock. Feature extraction for generative medical imaging evaluation: New evidence against an evolving trend, 2024. 24. Rafael C Gonzalez and Richard E Woods. Digital image processing . Pearson, 4th edition, 2018. DMD-augmented UNSB for Ultra-Low Field MRI Enhancement 11 25. Z. Wang, Eero Simoncelli, and Alan Bovik. Multiscale structural similarity for image quality assessment. volume 2, pages 1398 – 1402 Vol.2, 12 2003.

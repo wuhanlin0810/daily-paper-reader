@@ -1,0 +1,1084 @@
+Title: KindSleep: Knowledge-Informed Diagnosis of Obstructive Sleep Apnea from Oximetry
+
+URL Source: https://arxiv.org/pdf/2603.04755v1
+
+Published Time: Fri, 06 Mar 2026 01:24:28 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# KindSleep: Knowledge-Informed Diagnosis of Obstructive Sleep Apnea from Oximetry 
+
+## Micky C. Nnamdi 
+
+mnnamdi3@gatech.edu Georgia Institute of Technology Atlanta, Georgia, USA 
+
+## Wenqi Shi 
+
+wenqi.shi@utsouthwestern.edu UT Southwestern Medical Center Dallas, Texas, USA 
+
+## Cheng Wan 
+
+c.wan@gatech.edu Georgia Institute of Technology Atlanta, Georgia, USA 
+
+## J. Ben Tamo 
+
+jtamo3@gatech.edu Georgia Institute of Technology Atlanta, Georgia, USA 
+
+## Benjamin Smith 
+
+benjaminm.smith@shrinenet.org Shriners Children’s Chicago, Illinois, USA 
+
+## Chad Purnell 
+
+cpurnell@shrinenet.org Shriners Children’s Chicago, Illinois, USA 
+
+## May D. Wang ∗
+
+maywang@gatech.edu Georgia Institute of Technology Atlanta, Georgia, USA 
+
+Abstract 
+
+Obstructive sleep apnea (OSA) is a sleep disorder that affects nearly one billion people globally and significantly elevates cardiovascular risk. Traditional diagnosis through polysomnography is resource-intensive and limits widespread access, creating a critical need for accurate and efficient alternatives. In this paper, we introduce 
+
+KindSleep , a deep learning framework that integrates clinical knowledge with single-channel patient-specific oximetry signals and clinical data for precise OSA diagnosis. KindSleep first learns to identify clinically interpretable concepts, such as desaturation indices and respiratory disturbance events, directly from raw oxime-try signals. It then fuses these AI-derived concepts with multimodal clinical data to estimate the Apnea-Hypopnea Index (AHI). We evaluate KindSleep on three large, independent datasets from the National Sleep Research Resource (SHHS, CFS, MrOS; total n = 9,815). KindSleep demonstrates excellent performance in estimat-ing AHI scores (R 2 = 0.917, ICC = 0.957) and consistently outper-formed existing approaches in classifying OSA severity, achieving weighted F1-scores from 0.827 to 0.941 across diverse populations. By grounding its predictions in a layer of clinically meaningful concepts, KindSleep provides a more transparent and trustworthy diagnostic tool for sleep medicine practices. 
+
+CCS Concepts 
+
+• Computing methodologies → Machine learning approaches ;
+
+• Applied computing → Health informatics .
+
+Keywords 
+
+Obstructive sleep apnea, Multi-modality learning, Explainable AI, Time series, Concept bottleneck model, Clinical decision support. 
+
+> ∗Corresponding author.
+> ,
+
+1 Introduction 
+
+Obstructive sleep apnea (OSA) is a significant global health concern, affecting approximately one billion individuals worldwide between the ages of 30 and 69 [ 26 ]. OSA involves repeated episodes of partial or complete airway obstruction during sleep, increasing the risk of hypertension, cardiovascular disease, stroke, and significantly impairing overall quality of life [ 28 , 39 , 58 ]. Therefore, accurate and timely diagnosis is essential for effective management and reduction of associated health complications. Polysomnography (PSG), the gold standard for diagnosing OSA [ 6], requires overnight monitoring of multiple physiological parameters, including electroencephalogram (EEG), electrocardiogram (ECG), electromyogram (EMG), electrooculogram (EOG), oronasal airflow, respiratory effort, and oxygen saturation levels. Each of these sig-nals provides complementary information: EEG identifies sleep stages, airflow and oxygen saturation detect breathing disruptions, and EMG/EOG capture muscle tone and eye movements essential for event classification. Accurately computing the apnea hypopnea index (AHI) requires integrating these heterogeneous signals in a time-synchronized manner, a process that is technically demand-ing due to noise, inter-signal variability, and the need for expert scoring. Clinicians rely on this integrated signal analysis measure-ments to compute the AHI, classifying OSA severity into normal (AHI < 5), mild (5 ≤ AHI < 15), moderate (15 ≤ AHI < 30), and se-vere (AHI ≥ 30) [ 17 ]. However, PSG is complex, resource-intensive, and expensive, severely restricting its accessibility, especially in resource-limited regions. Given these limitations, researchers have increasingly focused on automated diagnostic methods leveraging fewer physiological chan-nels, notably oximetry signals [ 2 , 3, 8, 16 , 23 , 46 , 49 , 56 ]. Recently, multimodal approaches combining oximetry signals with clinical data have emerged, aiming to enhance diagnostic accuracy by in-corporating comprehensive patient-specific data [ 13 , 22 ]. Oximetry provides crucial insights into respiratory disturbances during sleep through measurements of blood oxygen saturation fluctuations [ 29 ]. Concurrently, clinical data offer valuable demographic, clinical, and 
+
+> arXiv:2603.04755v1 [cs.LG] 5 Mar 2026
+
+, , Nnamdi et al. NSRR Database 
+
+SHHS 
+
+> n = 5804
+
+Model Development 
+
+> n = 5070
+
+g(X) 
+
+> Sleep Annotation Model
+
+f(X) 
+
+Model Validation 
+
+> n = 4745
+> Exclude patients with any missing clinical features
+> Exclude patients with signals of length lower than 3 hrs.
+
+AHI = 0.175 
+
+A~HI = 0.752 
+
+AHI = 5.65 
+
+A~HI = 6.07 
+
+Data Collection 
+
+Quality Control 
+
+Model Development 
+
+> ……
+> Oximetry Signal
+> Clinical Data
+
+Mild 
+
+Healthy   
+
+> 65% of SHHS 1 for Model Training 25% of SHHS 1 for Moel Validation
+> Total Recording = 12101
+> *All Categorical features in the Clinical Data are encoded into numerical formats.
+> *All Oximetry Signals were standardized after preprocessing.
+> Total Recording = 9815
+
+CFS 
+
+> n = 735
+
+MrOS      
+
+> n = 2911
+> Hypopnea Event
+> Oxygen Desaturation Oxygen Saturation
+> …
+> …
+> …
+> ID Testing Sample (10% SHHS1) OOD Testing Sample (SHHS2,CFS,MrOS)
+> Compute Knowledge-Driven Events from oximetry signals
+> Preprocessed Clinical Data
+> * SHHS comprises two visits; with visit 1 = 5804 and visit 2 = 2651.
+> Sleep Events
+> Sleep Events
+> Xoxi C
+> Regression
+> Model (X ehr )
+> [C, X ehr ]�𝑦𝑦
+
+Figure 1: Overview of KindSleep . KindSleep involved two main components: the sleep annotation model, which extracts clinically relevant metrics from raw oximetry signals, and the regression model, which integrates these metrics with processed clinical data to estimate the AHI. (Right) Example of oximetry signals from a mild OSA patient (top; reference AHI = 5.65) and a healthy control (bottom; reference AHI = 0.175), annotated with hypopnea events (green) and desaturations (red), alongside corresponding attention maps from the sleep annotation model that highlight the regions the model concentrates on, and the resulting AHI estimations from the regression model. 
+
+lifestyle information, including critical risk factors and comorbidi-ties linked to OSA [ 20 , 43 ]. Body mass index (BMI), in particular, is strongly correlated with OSA prevalence, significantly higher among overweight and obese populations [ 1 , 12 , 27 , 37 , 45 , 55 ]. Such findings highlight the importance of integrating clinical and demographic data into OSA diagnostic models. However, exist-ing automated OSA diagnostic methods using oximetry often face challenges, including limited accuracy, generalizability, and trans-parency in decision-making. Such "black-box" AI approaches hinder clinical trust, preventing clinicians from understanding, validating, and confidently using these tools in clinical practice [ 14 , 30 , 40 –42, 44, 48, 54]. To address these issues, we introduce KindSleep , an AI-based framework designed to integrate clinical expertise with oximetry and clinical data for accurate and reliable OSA diagnosis. KindSleep 
+
+employs the concept bottleneck model (CBM) paradigm [ 21 , 31 ], leveraging clinically interpretable metrics derived from oximetry data, such as oxygen desaturation indices, oxygen saturation levels, and hypopnea event frequencies, as intermediate features to guide model predictions [ 15 ]. In this study, we validated KindSleep using extensive data from three independent cohorts (SHHS, CFS, MrOS) encompassing 9, 815 sleep recordings from the National Sleep Re-search Resource (NSRR). KindSleep demonstrated strong predic-tive performance, achieving a coefficient of determination ( 𝑅 2) of 
+
+0.917 and an intraclass correlation coefficient (ICC) of 0.957 , signif-icantly outperforming existing methods. Notably, our framework exhibited high generalizability across diverse patient populations, achieving weighted F1-scores ranging from 0.827 to 0.941. 
+
+2 KindSleep 
+
+2.1 Overview 
+
+We propose KindSleep , a clinically grounded machine learning framework designed to estimate AHI using a combination of oxime-try signals and clinical data. The key innovation lies in introducing an intermediate layer of clinically interpretable features—knowledge-informed metrics—derived from the raw oximetry signal. These metrics simulate the annotations a sleep technologist would typi-cally provide and help bridge the gap between raw physiological input and meaningful clinical prediction. KindSleep comprises two key components: a SLeep Annotation Model ( SLAM ) that de-rives interpretable concepts and a regressor model (primarily imple-mented as MLP-Regressor ) that leverages these concepts—together with clinical data—to produce the final AHI prediction. Given an oximetry signal 𝑋 𝑜𝑥𝑖 ∈ R1×𝑑 , representing a single-channel oxygen saturation ( SpO 2) measurement recorded at a 1Hz sampling rate, where 𝑑 is the length of the recording in seconds ( 25200 ), and a set of knowledge-informed metrics 𝐶 ∈ R𝑚 , which represent sleep relevant features computed from sleep events such as the oxygen desaturation index, average oxygen saturation, minimum oxygen saturation, and the frequency of apnea and hypopnea events. Our 
+
+> 1
+
+https://sleepdata.org/datasets/shhs/variables KindSleep: Knowledge-Informed Diagnosis of Obstructive Sleep Apnea from Oximetry , , 
+
+Table 1: Descriptions of Extracted Signal Annotations 1.Label Description 
+
+ahi_a0h4 (Apneas with no oxygen desaturation threshold used and with or without arousal + hypopneas with > 30% flow reduction and ≥ 4% oxygen desaturation and with or without arousal) / hour of sleep ahi_a0h4a Similar to ahi_a0h4, but hypopneas are tallied if they meet either of two conditions: ≥ 4% oxygen desaturation or evidence of arousal. ahi_c0h3 (Central apneas with no oxygen desaturation threshold used and with or without arousal + hypopneas with >
+
+30% flow reduction and ≥ 3% oxygen desaturation and with or without arousal) / hour of sleep ahi_c0h4 Central apnea index under the same conditions as above, except that hypopneas are credited if they meet a ≥ 4% desaturation threshold or are associated with arousal. avgsat Mean oxygen saturation value calculated over the full sleep period minsat Minimum oxygen saturation value recorded during the sleep period rdi0p Apneas with no oxygen desaturation threshold used and with or without arousal + hypopneas with > 30% flow reduction and with no oxygen desaturation used and with or without arousal / hour of sleep rdi2p Apneas with ≥ 2% oxygen desaturation and with or without arousal + hypopneas with > 30% flow reduction and ≥ 2% oxygen desaturation and with or without arousal / hour of sleep rdi3p Same as above, but requiring ≥ 3% oxygen desaturation rdi4p Same as above, but requiring ≥ 4% oxygen desaturation first task is to learn a function that estimates this set of knowledge-informed metrics 𝐶 from the raw signals 𝑋 𝑜𝑥𝑖 using SLAM 𝑔 , such that: 
+
+𝑔 : R1×𝑑 → R𝑚 , (1) such that 𝐶 = 𝑔 (𝑋 𝑜𝑥𝑖 ). The model 𝑔 is trained by minimizing the loss between the estimated and reference knowledge-informed metrics: 
+
+min 
+
+> 𝑔 ∈ G
+
+1
+
+𝑁 
+
+> 𝑁
+
+∑︁ 
+
+> 𝑖 =1
+
+L𝐶 (𝐶 𝑖 , 𝑔 (𝑋 (𝑖 ) 
+
+> 𝑜𝑥𝑖
+
+)) , (2) where L𝐶 is an appropriate loss function, 𝐶 𝑖 represents the ground truth metrics for subject 𝑖 , and G denotes the space of SLAM 𝑔 .The predicted knowledge-informed metrics 𝐶 , along with pa-tient clinical data 𝑋 𝑒ℎ𝑟 ∈ R𝑒 , which includes demographic and clinical information such as age, gender, BMI, and comorbidities are concatenated into a single feature vector [𝐶, 𝑋 𝑒ℎ𝑟 ] ∈ R𝑚 +𝑒 . This combined representation is used to estimate the AHI, a continuous measure of OSA severity. The regression model is defined as: 
+
+𝑓 : R𝑚 +𝑒 → R, (3) where 𝑓 estimate the AHI score ˆ𝑦 from the concatenated input 
+
+[𝐶, 𝑋 𝑒ℎ𝑟 ]. The objective is to minimize the prediction error over the dataset: 
+
+min  
+
+> 𝑓 ∈ F
+
+1
+
+𝑁 
+
+> 𝑁
+
+∑︁ 
+
+> 𝑖 =1
+
+L𝑌 
+
+
+
+𝑦 𝑖 , 𝑓 ([ 𝑔 (𝑋 (𝑖 ) 
+
+> 𝑜𝑥𝑖
+
+), 𝑋 (𝑖 ) 
+
+> 𝑒ℎ𝑟
+
+]) 
+
+
+
+, (4) 
+
+Table 2: Performance Metrics of SLAM Across Different Datasets. The table shows the 𝑀𝐴𝐸 and 𝑅𝑀𝑆𝐸 for SHHS1, SHHS2, CFS, and MrOS, indicating the robustness and gen-eralization capability of SLAM , when compared with other models. Models SHHS1 SHHS2 CFS MrOS MAE RMSE MAE RMSE MAE RMSE MAE RMSE                                                                                 
+
+> Linear 21.526 29.341 24.140 36.512 33.319 45.180 20.320 51.314 Ridge 15.741 21.198 15.204 20.767 21.014 28.612 5.116 11.509 Decision Tree 9.740 14.177 10.049 14.540 11.236 17.108 3.737 8.729 K-Neighbors 9.238 13.805 8.793 13.238 10.363 15.179 8.161 11.095 SVR 8.425 12.710 8.095 12.165 9.744 14.946 8.401 12.078 GradBoost 7.808 10.905 7.934 11.032 9.634 13.358 7.266 9.249 XGBoost 7.335 10.374 7.327 10.405 9.155 13.173 3.366 6.232 CatBoost 7.302 10.306 7.456 10.367 9.296 12.894 6.483 8.407 LightGBM 6.782 9.617 6.843 9.663 8.820 12.550 3.866 6.169
+> SLAM 3.500 5.269 3.787 5.555 4.429 7.495 3.264 5.485
+
+where 𝑁 is the number of subjects, 𝑦 𝑖 is the ground-truth AHI for subject 𝑖 , 𝑔 (𝑋 (𝑖 ) 
+
+> 𝑜𝑥𝑖
+
+) is the predicted knowledge-informed metric vector, 𝑋 (𝑖 ) 
+
+> 𝑒ℎ𝑟
+
+is the corresponding clinical data, L𝑌 is a loss function, and F denotes the space of regression model 𝑓 .Subsequently, the predicted AHI score ˆ𝑦 is discretized into clini-cally defined categories representing OSA severity levels (e.g., no apnea, mild, moderate, severe), using standard thresholding crite-ria [ 17 ]. It is important to note that during training, the ground-truth values of the knowledge-informed metrics 𝐶 are available and are used to supervise the learning of the annotation model 𝑔 . How-ever, during deployment, these annotations are not assumed to be accessible. Instead, the model must infer them directly from the raw oximetry signal 𝑋 𝑜𝑥𝑖 . This setup ensures that the full pipeline be-ginning with signal input and ending with AHI prediction, remains fully automated and aligned with real-world clinical deployment conditions. 
+
+2.2 Knowledge-Informed Metrics 
+
+Knowledge-informed metrics refer to clinically meaningful annota-tions derived from raw physiological signals—specifically, oximetry data that capture essential indicators of sleep-disordered breathing. These metrics are analogous to the assessments a trained sleep technologist would extract during a manual scoring process, and they represent quantifiable components of sleep apnea severity. By isolating these intermediate features, our model introduces a level of interpretability and clinical alignment rather than relying solely on end-to-end black-box learning from raw signals. The use of these metrics serves two core purposes. First, they provide a clinically interpretable layer that enables insight into the physiological events driving the model’s predictions. Second, they act as a bottleneck mechanism that encourages the model to learn meaningful representations aligned with medical understanding of sleep apnea, particularly the AHI, which is the standard diagnostic metric for OSA severity. These metrics include variations of AHI and RDI (Respiratory Disturbance Index) computed under different desaturation thresh-olds and event definitions, as well as statistical features such as average and minimum oxygen saturation during sleep. All metrics are derived from temporal patterns of oxygen desaturation, apnea, and hypopnea events. Table 1 provides a detailed breakdown of each extracted annotation and its clinical interpretation. , , Nnamdi et al. 0 20 40 60 80 100 
+
+> Predicted AHI
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Actual AHI
+
+R2 = 0.917      
+
+> SHHS1
+> Ideal
+> No_Apnea
+> Mild
+> Moderate
+> Severe 020 40 60 80 100
+> Predicted AHI
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Actual AHI
+
+R2 = 0.873      
+
+> SHHS2
+> Ideal
+> No_Apnea
+> Mild
+> Moderate
+> Severe 020 40 60 80 100
+> Predicted AHI
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Actual AHI
+
+R2 = 0.884      
+
+> CFS
+> Ideal
+> No Apnea
+> Mild
+> Moderate
+> Severe 020 40 60 80 100
+> Predicted AHI
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Actual AHI
+
+R2 = 0.861 
+
+> MrOS
+> Ideal
+> No_Apnea
+> Mild
+> Moderate
+> Severe
+
+(a) MLP-Regressor : The scatter plots show the relationship between the predicted AHI and the actual AHI for the SHHS1, SHHS2, CFS, and MrOS datasets. The data points are color-coded based on the OSA severity categories. The black dashed line represents the ideal prediction scenario where the predicted AHI perfectly aligns with the actual AHI. 0 20 40 60 80 
+
+> Mean
+> 20
+> 10
+> 0
+> 10
+> 20
+> 30
+> Error
+> Mean
+> 0.72
+> +1.96 SD
+> 9.78
+> -1.96 SD
+> -8.34
+
+ICC = 0.957      
+
+> SHHS1 Bland-Altman Plot
+> Differences
+> Mean diff
+> Lower limit
+> Upper limit 020 40 60 80 100
+> Mean
+> 30
+> 20
+> 10
+> 0
+> 10
+> 20
+> 30
+> 40
+> Error
+> Mean
+> -0.54
+> +1.96 SD
+> 10.36
+> -1.96 SD
+> -11.44
+
+ICC = 0.934       
+
+> SHHS2 Bland-Altman Plot
+> Differences
+> Mean diff
+> Lower limit
+> Upper limit 020 40 60 80 100 120
+> Mean
+> 30
+> 20
+> 10
+> 0
+> 10
+> 20
+> 30
+> 40
+> Error
+> Mean
+> -0.28
+> +1.96 SD
+> 12.92
+> -1.96 SD
+> -13.48
+
+ICC = 0.938     
+
+> CFS Bland-Altman Plot
+> Differences
+> Mean diff
+> Lower limit
+> Upper limit 020 40 60 80
+> Mean
+> 60
+> 40
+> 20
+> 0
+> 20
+> 40
+> Error
+> Mean
+> 0.32
+> +1.96 SD
+> 12.13
+> -1.96 SD
+> -11.50
+
+ICC = 0.929 
+
+> MrOS Bland-Altman Plot
+> Differences
+> Mean diff
+> Lower limit
+> Upper limit
+
+(b) MLP-Regressor : The Bland-Altman plots compare the original AHI measurements with the estimated AHI measurements for SHHS1, SHHS2, CFS, and MrOS. The plot displays the difference in AHI error between the original and estimated measurements against their mean AHI. The dashed green line represents the mean difference, indicating the systematic bias. The solid red lines show the limits of agreement ( ±1.96 
+
+standard deviations from the mean difference), which define the range within which most differences between the methods are expected to lie. Each blue dot represents an individual measurement pair, illustrating the agreement and variability between the original and estimated AHI values. No Apnea Mild Moderate Severe 
+
+Predicted label 
+
+> No Apnea Mild Moderate Severe
+> True label
+
+140 
+
+(86.4%) 
+
+22 
+
+(13.6%) 
+
+0
+
+(0.0%) 
+
+0
+
+(0.0%) 
+
+11 
+
+(6.0%) 
+
+159 
+
+(87.4%) 
+
+12 
+
+(6.6%) 
+
+0
+
+(0.0%) 
+
+0
+
+(0.0%) 
+
+24 
+
+(20.0%) 
+
+87 
+
+(72.5%) 
+
+9
+
+(7.5%) 
+
+0
+
+(0.0%) 
+
+0
+
+(0.0%) 
+
+20 
+
+(20.0%) 
+
+80 
+
+(80.0%) 
+
+SHHS1 No Apnea Mild Moderate Severe 
+
+Predicted label 
+
+> No Apnea Mild Moderate Severe
+> True label
+
+434 
+
+(71.6%) 
+
+164 
+
+(27.1%) 
+
+8
+
+(1.3%) 
+
+0
+
+(0.0%) 
+
+61 
+
+(6.5%) 
+
+706 
+
+(75.7%) 
+
+159 
+
+(17.0%) 
+
+7
+
+(0.8%) 
+
+0
+
+(0.0%) 
+
+99 
+
+(16.4%) 
+
+445 
+
+(73.8%) 
+
+59 
+
+(9.8%) 
+
+0
+
+(0.0%) 
+
+3
+
+(0.7%) 
+
+65 
+
+(16.2%) 
+
+333 
+
+(83.0%) 
+
+SHHS2 No Apnea Mild Moderate Severe 
+
+Predicted label 
+
+> No Apnea Mild Moderate Severe
+> True label
+
+273 
+
+(81.7%) 
+
+58 
+
+(17.4%) 
+
+2
+
+(0.6%) 
+
+1
+
+(0.3%) 
+
+16 
+
+(12.2%) 
+
+91 
+
+(69.5%) 
+
+21 
+
+(16.0%) 
+
+3
+
+(2.3%) 
+
+3
+
+(3.8%) 
+
+12 
+
+(15.4%) 
+
+55 
+
+(70.5%) 
+
+8
+
+(10.3%) 
+
+0
+
+(0.0%) 
+
+1
+
+(1.4%) 
+
+12 
+
+(16.4%) 
+
+60 
+
+(82.2%) 
+
+CFS No Apnea Mild Moderate Severe 
+
+Predicted label 
+
+> No Apnea Mild Moderate Severe
+> True label
+
+80 
+
+(66.7%) 
+
+36 
+
+(30.0%) 
+
+2
+
+(1.7%) 
+
+2
+
+(1.7%) 
+
+46 
+
+(14.7%) 
+
+233 
+
+(74.7%) 
+
+32 
+
+(10.3%) 
+
+1
+
+(0.3%) 
+
+2
+
+(0.6%) 
+
+49 
+
+(15.5%) 
+
+252 
+
+(79.7%) 
+
+13 
+
+(4.1%) 
+
+1
+
+(0.4%) 
+
+1
+
+(0.4%) 
+
+45 
+
+(16.4%) 
+
+227 
+
+(82.8%) 
+
+MrOS 
+
+(c) MLP-Regressor : The confusion matrix results of our KindSleep framework were evaluated using three different testing datasets (SHHS 1, SHHS 2, CFS, and MrOS) to assess generalization. The results demonstrate varying classification outcomes across the four predicted classes. 
+
+Figure 2: (a) Parity plots, (b) Bland–Altman plots, and (c) confusion matrix results for SHHS1, SHHS2, CFS and MrOS. Table 3: Evaluation Metrics Across Various Datasets: The weighted 𝐹 1 Score, precision, sensitivity, specificity, 𝑅 2, 𝐼𝐶𝐶 , 𝑀𝐴𝐸 and 
+
+𝑅𝑀𝑆𝐸 across various datasets for the regression model considered. All metrics are weighted, meaning they are calculated by averaging values proportionally to class sizes to account for class imbalances in the datasets. Regression Model Dataset F1 Score Precision Sensitivity Specificity 𝑅 2 ICC MAE RMSE 
+
+MLP-Regressor 
+
+SHHS1 0.827 ± 0.030 0.832 ± 0.030 0.826 ± 0.034 0.935 ± 0.013 0.917 0.957 3.101 4.677 SHHS2 0.756 ± 0.016 0.763 ± 0.017 0.754 ± 0.017 0.899 ± 0.008 0.873 0.934 3.731 5.589 CFS 0.786 ± 0.032 0.803 ± 0.031 0.778 ± 0.034 0.921 ± 0.017 0.884 0.938 3.930 6.743 MrOS 0.777 ± 0.026 0.782 ± 0.025 0.775 ± 0.025 0.916 ± 0.010 0.861 0.929 3.486 6.038 KindSleep: Knowledge-Informed Diagnosis of Obstructive Sleep Apnea from Oximetry , , 
+
+3 Results 3.1 Datasets 
+
+In this study, we used three large-scale, independent cohorts from NSRR [57], including: 
+
+• Sleep Heart Health Study (SHHS) [ 32 ], organized through the National Heart, Lung, and Blood Institute, was designed to investigate how sleep-disordered breathing affects car-diovascular health and related conditions. The cohort origi-nally enrolled 6,441 adults aged 40 years and above for its first phase, during which overnight oximetry measurements were gathered. A second phase followed with 3,295 partici-pants. Although SHHS collected comprehensive overnight PSG data, the oximetry signal analyzed in this work was measured using the Nonin XPOD Model 3011 device. 
+
+• Cleveland Family Study (CFS) [34 ] consists of data col-lected across as many as four study visits spanning 16 years, including 2,284 participants drawn from 361 families, with nearly half of the participants identifying as African Amer-ican. Oximetry signal was measured using a Nonin 8000 sensor at a sampling frequency of 1 Hz. For the present anal-ysis, we relied on a curated subset released through NSRR, which consists of 735 overnight oximetry recordings. 
+
+• Osteoporotic Fractures in Men Study (MrOS) [4] is an an-cillary study of the primary Osteoporotic Fractures in Men Study. During the initial recruitment period (2000–2002), 5,994 men aged 65 years or older, all living independently in the community, were enrolled across six clinical sites for baseline assessments. A few years later, from late 2003 through early 2005, 3,135 of these participants took part in the ancillary Sleep Study, which included unattended overnight PSG along with three to five days of wrist actigra-phy monitoring. 
+
+3.2 Experimental Setup 
+
+3.2.1 Dataset Split: KindSleep was trained using 65% from the SHHS1 dataset as the training set and 25% as the validation set. The remaining 10% of SHHS1 served as the in-distribution test set. Additionally, data from the SHHS2, CFS, and MrOS datasets were used as the out-of-distribution test sets to evaluate the model’s generalization across diverse populations. 
+
+3.2.2 Implementation Details. To optimize the model performance, we employed a Bayesian hyperparameter optimization strategy for both SLAM and MLP-Regressor . The search space included model specific architectural parameters (e.g., number of layers, kernel sizes, number of filters), as well as training hyperparameters (e.g., learning rates, dropout rates, regularization strength, and optimizer type). Each configuration was evaluated using the validation set, and the model achieving the lowest validation loss was selected for final testing. All experiments were conducted on an NVIDIA A100 GPU with 80GB of memory, and random seeds were fixed to 42 to ensure reproducibility. 
+
+3.2.3 Parameter Settings. For the SLAM , hyperparameter tuning was performed using Optuna. The search space included variations in the kernel sizes, number of filters, dropout rates, learning rates, weight decay, and activation functions. The best configuration used 256 filters, a kernel size of 9, a dropout rate of 0.1, and a learning rate of 0.0005 without weight decay, using the Adam optimizer and ReLU activation. For the MLP-Regressor , the optimal configuration included ReLU activation, an L2 penalty of 0.1, a single hidden layer with 50 units, the lbfgs solver, and an adaptive learning rate of 0.001. 
+
+3.3 Main Results 
+
+3.3.1 Effect of SLAM . We evaluate the robustness and generaliza-tion capability of SLAM across various datasets. As shown in Table 2, 
+
+SLAM consistently performs well across both in-distribution and out-of-distribution datasets, demonstrating strong generalization and resilience to population shifts. It is important to note that eval-uating the predicted knowledge-informed metrics (as performed by SLAM ) against standard state-of-the-art (SOTA) baselines is not directly applicable, as we are the first to propose and systemati-cally evaluate the prediction of knowledge-informed metrics as an intermediate representation. Therefore, the evaluation of SLAM fo-cuses on demonstrating how well it performs this novel task when compared to conventional baselines. 
+
+3.3.2 Regression & Classification. To assess the performance of 
+
+MLP-Regressor model in the regression task of estimating the AHI, we utilize 𝑅 2 and 𝐼𝐶𝐶 as key metrics. As shown in Figures 2a and 2b, and Table 3, for MLP-Regressor , the 𝑅 2 and 𝐼𝐶𝐶 values were 0.917 and 0.957 for SHHS1, 0.873 and 0.934 for SHHS2, 0.884 and 0.938 for CFS, and 0.902 and 0.951 for MrOS. This indicates that the values estimated by the KindSleep are most closely aligned with the true AHI values. When the estimated AHI values are converted to their corre-sponding severity levels, as shown in Table 3, our proposed pipeline 
+
+KindSleep achieves good performance on all three datasets across 
+
+𝐹 1 Score, precision, sensitivity, and specificity, with confidence in-tervals set at 95%. These results show that our model is robust and generalized to external datasets. Building on these observa-tions, the confusion matrix in Figure 2c highlights KindSleep ’s ability to perform better at identifying severe and healthy cases compared to mild and moderate ones in MrOS and CFS. In con-trast, for SHHS1, KindSleep demonstrates improved performance in identifying healthy, mild, and severe cases relative to moderate cases. Similarly, in SHHS2, KindSleep performs particularly well in identifying severe cases compared to other severity levels. Figure 3a, which presents the 𝐹 1 Score, precision, sensitivity, and specificity across various severity levels, further corroborates these findings. 
+
+3.4 Effect of Knowledge-Informed Metrics 
+
+To evaluate the role of knowledge-informed metrics in model per-formance, we conduct a series of experiments where we vary the quality and availability of these annotations during training. It is im-portant to note that in our framework, knowledge-informed metrics are only used during training and are predicted from raw oxime-try signals during inference. This reflects real-world deployment conditions, where sleep annotations are not accessible. Figure 3b illustrates the effect of using 5% to 100% of correct knowledge-informed metrics during training. As the number of accurate annotations increases, we observe consistent improve-ments in downstream performance metrics, including 𝐹 1 Score, , , Nnamdi et al. MLP -Regressor 
+
+(a) KindSleep performance across various labels using MLP-Regressor . The figure illustrates higher accuracy in estimating patients with no apnea and severe apnea, with slightly lower performance for moderate and mild apnea predictions. 5% 25% 50% 75% 100% 0.5 0.6 0.7 0.8 0.9                             
+
+> Annotation F1 Score 5% 25% 50% 75% 100% 0.5 0.6 0.7 0.8 0.9
+> Annotation Precision 5% 25% 50% 75% 100% 0.5 0.6 0.7 0.8 0.9
+> Annotation Sensitivity
+> SHHS 1 SHHS 2 CFS MrOS 5% 25% 50% 75% 100% 0.84 0.86 0.88 0.90 0.92 0.94
+> Annotation Specificity 5% 25% 50% 75% 100% 0.80 0.85 0.90 0.95 1.00
+> Annotation ICC 5% 25% 50% 75% 100% 0.70 0.75 0.80 0.85 0.90 0.95
+> Annotation R2 5% 25% 50% 75% 100% 02468
+> Annotation MAE 5% 25% 50% 75% 100% 0510 15
+> Annotation RMSE
+
+(b) Comprehensive Comparison of Outcomes Using Varying Proportions of knowledge-informed metrics from 5% to 100% during the Experi-mental Setup. The results indicate an improvement across all metrics as the proportion of knowledge-informed metrics increases from 5% to 100%. 
+
+Figure 3: Outcome comparison across varying proportions of knowledge-informed metrics. 
+
+precision, sensitivity, specificity, ICC, and 𝑅 2—and reductions in 
+
+𝑀𝐴𝐸 and 𝑅𝑀𝑆𝐸 . This trend highlights that the model learns better feature representations when exposed to a greater quantity of clini-cally meaningful supervision. To further explore the importance of annotation quality, we simulate degraded annotations using two approaches: (1) randomly generated annotations and (2) shuffled segments of the ground-truth labels. Table 4 shows a marked drop in performance under these conditions. This confirms that the model does not merely memorize annotations but instead relies on them to structure the learning of clinically relevant representations. These findings support the premise that the knowledge-informed metrics serve as a valuable, interpretable supervision mechanism. The model benefits from their guidance only when they are accurate and derived from expert-like inputs, reinforcing the validity of using them as an intermediate clinical representation during training. 
+
+3.5 Model Comparison 
+
+For performance comparison, we have considered two existing mul-timodal combination methods [ 47 ] using the same model parame-ters to show the advantage of integrating the knowledge-informed metrics: 
+
+• Feature level integration : High-level features extracted from each modality are concatenated before passing into a model for decision-making. 
+
+• Decision level integration : Voting is performed using decisions of individual modality model. We have also considered three SOTA baselines for OSA diagnosis [8, 9, 22]: 
+
+• DNN-OXi (Classification) [8 ]: Defined the solution to the problem as a classification problem using a customized DNN model and an oximetry signal. 
+
+• DNN-Oxi (Regression) [ 9]: A deep neural network trained on raw oximetry signals, formulated as a regression task to estimate continuous AHI values. 
+
+• OxiNet (Multimodal) [22 ]: Introduced an OxiNet model to combine clinical data and oximetry signal to estimate and classify patient’s AHI. It is important to note that both our method and the referenced baseline models process the full oximetry signal without parti-tioning into smaller chunks or windows. We deliberately selected baseline models that followed this same assumption to ensure a KindSleep: Knowledge-Informed Diagnosis of Obstructive Sleep Apnea from Oximetry , , SPE                     
+
+> SEN
+> ICC
+> PRE
+> R2
+> F1
+> 0.5 0.6 0.7 0.8 0.9 1.0
+> (a) SHHS 1
+> KindSleep
+> Feature level integration
+> Decision level Integration
+> DNN-Oxi (Classification)[6]
+> OxiNet (EHR + Oximetry)[12]
+> DNN-Oxi (Regression)[28]
+> SPE
+> SEN
+> ICC
+> PRE
+> R2
+> F1
+> 0.5 0.6 0.7 0.8 0.9 1.0
+> (b) SHHS 2
+> SPE
+> SEN
+> ICC
+> PRE
+> R2
+> F1
+> 0.5 0.6 0.7 0.8 0.9 1.0
+> (c) CFS
+> SPE
+> SEN
+> ICC
+> PRE
+> R2
+> F1
+> 0.5 0.6 0.7 0.8 0.9 1.0
+> (d) MrOS
+
+Figure 4: Radar charts comparing various performance metrics of our KindSleep model against two baseline multimodal integration methods on the (a) SHHS1, (b) SHHS2, (c) CFS. Table 4: Impact of Incorrect, Partially Correct, and Fully Correct Annotations on Pipeline Performance. The results indicate that KindSleep performance decreases with incorrect annotations. Annotations 𝐹 1 Score Precision Sensitivity Specificity 𝑅 2 ICC MAE RMSE 
+
+incorrect annotations 0.223 ± 0.036 0.174 ± 0.032 0.313 ± 0.038 0.749 ± 0.020 0.125 0.245 10.831 15.226 incorrect + 5% correct annotations 0.637 ± 0.039 0.647 ± 0.040 0.643 ± 0.040 0.871 ± 0.017 0.832 0.910 4.854 6.679 correct annotations 0.827 ± 0.030 0.832 ± 0.030 0.826 ± 0.034 0.935 ± 0.013 0.917 0.957 3.101 4.677 
+
+fair and consistent comparison. While input processing strategies can vary in the literature, our comparisons are grounded in models that align with our signal-level granularity. As shown in Figure 4, we observe that KindSleep outperforms existing literature and data integration methods for multimodal fusion. This indicates that knowledge-informed metrics are more significant and have a greater impact on model decisions when compared to existing literature. 
+
+4 Discussion 
+
+While deep learning models have the potential to learn and predict AHI independently without human intervention [ 51 , 52 ], KindSleep 
+
+differs in that its learning relies entirely on knowledge-informed metrics and control to perform this task. This dependency makes 
+
+KindSleep more efficient, robust and provides a clear direction during the learning process. Although we have demonstrated that 
+
+KindSleep significantly outperforms previous integration meth-ods and existing literature, we now focus on discussing the trans-parency, trust, and interpretability aspects of this pipeline. To begin, we investigate how effectively SLAM estimates knowledge-informed metrics. For this purpose, we analyze oximetry signals using an attention mechanism derived from our trained model. Specifically, we modified the original Gradient-weighted Class Ac-tivation Mapping (Grad-CAM) technique [ 36 ] to align with the requirements of our study. This adaptation enables us to visualize neural attention through an attention map, as shown in Figure 5. These maps highlight the model’s focus on various regions of the signal, effectively revealing its attention to clinically meaningful pat-terns. Closer examination shows that the model directs its attention primarily toward segments of the oximetry signal corresponding to desaturation and apnea events. These high-activation areas align with significant drops in oxygen saturation, reinforcing that the model is focusing on physiologically relevant regions rather than stable signal segments. While it may initially appear that some ac-tivations lie in stable regions, further inspection reveals that these often precede or lead into desaturation transitions, indicating early detection. Importantly, regions dominated by artifacts are largely ignored, demonstrating the model’s robustness in distinguishing signal noise from clinical indicators. Secondly, we analyze how independent features influence the regression model using the MLP-Regressor . To achieve this, we uti-lize SHapley Additive exPlanations (SHAP) [ 25 ], which quantify the contribution of each feature (clinical data and knowledge-informed metrics) to the final prediction. This enhances our understanding of which input factors most significantly influence the model’s estima-tion and classification of patient AHI. As depicted in Figure 6, the estimated knowledge-informed metrics have a more substantial in-fluence on model predictions compared to the demographic features. Specifically, annotations such as ahi_a0h4a, ahi_a0h4, ahi_c0h3a, ahi_coh3, rdi0p, and rdi3p emerge as the most influential features. These metrics integrate clinically interpretable constructs like de-saturation levels, minimum saturation, and hypopnea frequency. For example, ahi_a0h4a quantifies the number of apneas and hy-popneas with ≥ 4% oxygen desaturation or with arousal per hour of sleep. rdi0p includes apneas and hypopneas with no desaturation threshold, with or without arousal, normalized by sleep time. In contrast, rdi3p applies a 3% desaturation threshold, adding more specificity. These annotations align closely with clinical guidelines for evaluating sleep-related breathing disorders. Furthermore, among all clinical features, BMI emerges as a co-contributing factor. Analysis of the relationship between BMI and AHI reveals a trend: individuals with higher BMI values tend to have , , Nnamdi et al. 0 5000 10000 15000 20000 25000              
+
+> 10
+> 8
+> 6
+> 4
+> 2
+> 0
+> Amplitude
+> Oximetry
+> Artifact
+> Apnea
+> Desaturation
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Activation 5000 5500 6000 6500 7000 7500 8000 8500 9000
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> Amplitude
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Activation 20000 21000 22000 23000 24000 25000
+> Time (seconds)
+> 6
+> 5
+> 4
+> 3
+> 2
+> 1
+> 0
+> Amplitude
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> Activation
+
+Figure 5: Attention mechanism employed by the SLAM model across oximetry signals, with events (e.g., desaturation, ap-nea, and artifacts) identified from ground truth annotations. The top section displays the global signal over the full dura-tion (0–25,200 seconds), highlighting areas of high activation that correspond to physiologically relevant events, such as desaturation and apnea, while effectively ignoring artifact-prone regions. The middle section provides a focused view of the signal between 5,000 and 9,000 seconds, where the model demonstrates precise attention on desaturation events and hypopneas. The bottom section zooms into a segment from 20,000 to 25,000 seconds, showcasing the model’s ability to neglect low-amplitude, artifact-dominated regions devoid of clinically significant activities. 
+
+more severe AHI outcomes. Stratification of SHHS1 test dataset par-ticipants into BMI categories demonstrates that obese individuals exhibit the highest mean AHI ( 21 .821 ± 19 .302 ), followed by over-weight individuals ( 15 .688 ± 14 .120 ) and normal-weight individuals (11 .716 ± 13 .855 ). These findings suggest that BMI plays a role in influencing the severity of sleep-related breathing disorders. Cor-relation analysis further supports this relationship, with Pearson (𝑟 = 0.306 , 𝑝 𝑣𝑎𝑙𝑢𝑒 < 10 −13 and Spearman ( 𝜌 = 0.305 , 𝑝 𝑣𝑎𝑙𝑢𝑒 < 10 −13 )coefficients indicating weak to moderate but statistically significant positive associations between BMI and AHI. These results reinforce the hypothesis that increased body mass may contribute to air-way obstruction and other physiological changes that exacerbate sleep apnea symptoms [ 11 , 18 , 33 ]. In terms of predictive perfor-mance, the 𝐹 1 scores highlight BMI’s role in distinguishing severity across different categories. For obese individuals, the 𝐹 1 score was 
+
+0.818 ± 0.059 , while overweight individuals achieved an 𝐹 1 score of 
+
+0.825 ± 0.047 . Among normal-weight individuals, the 𝐹 1 score was slightly higher at 0.839 ± 0.053 . All 𝐹 1 scores are reported with 95% confidence intervals, demonstrating consistent performance across BMI categories. 5 0 5 10 15 20 25 30 
+
+> SHAP value (impact on model output)
+> htnderv_s1
+> diasbp
+> smokstat_s1
+> race
+> minsat
+> avgsat
+> systbp
+> height
+> age_s1
+> weight
+> ahi_c0h3
+> bmi_s1
+> rdi4p
+> ahi_c0h3a
+> ahi_c0h4
+> ahi_a0h4
+> rdi2p
+> rdi3p
+> rdi0p
+> ahi_a0h4a
+> Low
+> High
+> Feature value
+
+Figure 6: MLP-Regressor : SHAP results show the ranking of predicted knowledge-informed metrics against the patient clinical data. 0 100 200 300 400 500      
+
+> No. of Corrected Errors
+> 0.82
+> 0.83
+> 0.84
+> 0.85
+> 0.86
+> 0.87
+> F1 Score
+> F1 Score vs Corrected Errors 0100 200 300 400 500
+> No. of Corrected Errors
+> 2.5
+> 3.0
+> 3.5
+> 4.0
+> 4.5
+> RMSE / MAE
+> RMSE/MAE vs Corrected Errors
+> RMSE
+> MAE
+
+Figure 7: Relationship between the 𝐹 1 scores, MAE, and RMSE as errors are intercepted. We observed that identifying and adjusting these errors before passing them to the regression model during training significantly improves the system architecture’s performance. 
+
+Another advantage of KindSleep compared to the existing inte-gration pipeline is that it allows for model improvement through human intervention since the model learns from sleep annotation and supervision. Figure 7 shows that since clinicians can understand the guided model decisions, identifying errors that might occur at training time during SLAM estimation of the knowledge-informed metrics will significantly improve the model’s performance. One drawback to this is that the intervention only influences the per-formance of the regression model and does not affect the ground truth of the SLAM , therefore someone needs to keep intervening. To address this limitation, we will consider continuous learning, where SLAM is designed to continuously learn as new oximetry data, collected from different calibrated devices, are fed into the system. This can be built by adopting the independent or sequential KindSleep: Knowledge-Informed Diagnosis of Obstructive Sleep Apnea from Oximetry , , 
+
+learning schema introduced in concept-based learning through a single modality [21, 31]. Beyond this technical direction, several broader considerations remain. First, while interpretability was demonstrated qualitatively, quantitative analyses, such as correlations between attention weights and oxygen desaturation events or consistency of SHAP-derived importance scores, will be needed to confirm alignment with clini-cally meaningful features. Second, calibration analyses using relia-bility diagrams and Brier scores need to be incorporated to ensure that KindSleep ’s probability estimates are trustworthy in clinical contexts. Third, because the model currently emphasizes oxygen desaturation, future extensions may benefit from integrating addi-tional low-cost signals (e.g., respiratory effort or airflow surrogates) and waveform morphology features to better capture hypopnea events. 
+
+5 Conclusion 
+
+In this paper, we have proposed a novel pipeline, KindSleep , which consists of SLAM and a regression model for estimating and classi-fying a patient’s AHI. The proposed pipeline relies on knowledge-informed metrics to guide its learning, making it better than existing multimodal integration pipelines that solely depend on features extracted based on patterns observed by the model. The robust-ness and generalizability of KindSleep are demonstrated through evaluations on multiple datasets. Additionally, we have shown the transparency of the pipeline, which is essential for practicing re-sponsible AI and potential adoption by physicians. This approach aligns with the principles of CBM, further demonstrating the utility of knowledge-informed metrics in enhancing model interpretability and performance. For future work, we will incorporate continuous learning to enable the model to continuously learn from its mis-takes and correct itself, thereby preventing repetition of errors and improving its performance over time. 
+
+Acknowledgment 
+
+This research was supported by a seed research grant from Shriners Children’s Hospital. Additional support was provided in part by the AI Makerspace of the College of Engineering and other research cy-berinfrastructure resources and services offered by the Partnership for an Advanced Computing Environment (PACE) at the Georgia Institute of Technology, Atlanta, Georgia, USA. We also gratefully acknowledge Wallace H. Coulter Distinguished Faculty Fellowship, a Petit Institute Faculty Fellowship, and research funding from Amazon and Microsoft Research to Professor May D. Wang. 
+
+Data Availability 
+
+This work used the Sleep Heart Health Study (SHHS) dataset. The SHHS was supported by National Heart, Lung, and Blood Insti-tute cooperative agreements U01HL53916 (University of Califor-nia, Davis), U01HL53931 (New York University), U01HL53934 (Uni-versity of Minnesota), U01HL53937 and U01HL64360 (Johns Hop-kins University), U01HL53938 (University of Arizona), U01HL53940 (University of Washington), U01HL53941 (Boston University), and U01HL63463 (Case Western Reserve University). The National Sleep Research Resource was supported by the National Heart, Lung, and Blood Institute (R24 HL114473, 75N92019R002). This work also made use of the MrOS Sleep Study dataset (Outcomes of Sleep Disorders in Older Men). The study was funded by the Na-tional Heart, Lung, and Blood Institute under grants R01 HL071194, R01 HL070848, R01 HL070847, R01 HL070842, R01 HL070841, R01 HL070837, R01 HL070838, and R01 HL070839. The National Sleep Research Resource was supported by the National Heart, Lung, and Blood Institute (R24 HL114473, 75N92019R002). This work fur-ther made use of the Cleveland Family Study (CFS) dataset. The study received support from the National Institutes of Health under grants HL46380, M01 RR00080-39, T32-HL07567, RO1-46380. The National Sleep Research Resource was supported by the National Heart, Lung, and Blood Institute (R24 HL114473, 75N92019R002). 
+
+References 
+
+[1] Rexford S Ahima and Mitchell A Lazar. 2013. The health risk of obesity—better metrics imperative. Science 341, 6148 (2013), 856–858. [2] Ángel Serrano Alarcón, Natividad Martínez Madrid, Ralf Seepold, and Juan An-tonio Ortega. 2023. Obstructive sleep apnea event detection using explainable deep learning models for a portable monitor. Frontiers in neuroscience 17 (2023), 1155900. [3] Lachlan D Barnes, Kevin Lee, Andreas W Kempa-Liehr, and Luke E Hallum. 2022. Detection of sleep apnea from single-channel electroencephalogram (EEG) using an explainable convolutional neural network (CNN). PLOS one 17, 9 (2022), e0272167. [4] Terri Blackwell, Kristine Yaffe, Sonia Ancoli-Israel, Susan Redline, Kristine E Ensrud, Marcia L Stefanick, Alison Laffan, Katie L Stone, and Osteoporotic Frac-tures in Men Study Group. 2011. Associations between sleep architecture and sleep-disordered breathing and cognition in older community-dwelling men: the osteoporotic fractures in men sleep study. Journal of the American Geriatrics Society 59, 12 (2011), 2217–2225. [5] Carly A Bobak, Paul J Barr, and A James O’Malley. 2018. Estimation of an inter-rater intra-class correlation coefficient that overcomes common assumption violations in the assessment of health measurement scales. BMC medical research methodology 18 (2018), 1–11. [6] Pablo E Brockmann, Christine Schaefer, Anette Poets, Christian F Poets, and Michael S Urschitz. 2013. Diagnosis of obstructive sleep apnea in children: a systematic review. Sleep medicine reviews 17, 5 (2013), 331–340. [7] Parnasree Chakraborty and C Tharini. 2024. Non-invasive cuff free blood pressure and heart rate measurement from photoplethysmography (PPG) signal using machine learning. Wireless Personal Communications (2024), 1–13. [8] Jeng-Wen Chen, Chia-Ming Liu, Cheng-Yi Wang, Chun-Cheng Lin, Kai-Yang Qiu, Cheng-Yu Yeh, and Shaw-Hwa Hwang. 2023. A deep neural network-based model for OSA severity classification using unsegmented peripheral oxygen saturation signals. Engineering Applications of Artificial Intelligence 122 (2023), 106161. [9] Hung-Ying Chi, Cheng-Yu Yeh, Jeng-Wen Chen, Cheng-Yi Wang, and Shaw-Hwa Hwang. 2024. Apnea-Hypopnea Index Prediction for Obstructive Sleep Apnea Using Unsegmented SpO2 Signals and Deep Learning. IEEJ Transactions on Electrical and Electronic Engineering 19, 3 (2024), 448–450. [10] Felipe Contreras-Briceño, Jorge Cancino, Maximiliano Espinosa-Ramírez, Gon-zalo Fernández, Vader Johnson, and Daniel E Hurtado. 2024. Estimation of ventilatory thresholds during exercise using respiratory wearable sensors. NPJ Digital Medicine 7, 1 (2024), 198. [11] Danny J Eckert and Atul Malhotra. 2008. Pathophysiology of adult obstructive sleep apnea. Proceedings of the American thoracic society 5, 2 (2008), 144–153. [12] Deema Fattal, Stacy Hester, and Linder Wendt. 2022. Body weight and obstructive sleep apnea: a mathematical relationship between body mass index and apnea-hypopnea index in veterans. Journal of Clinical Sleep Medicine 18, 12 (2022), 2723–2729. [13] Hamed Fayyaz, Niharika S D’Souza, and Rahmatollah Beheshti. 2024. Multimodal sleep apnea detection with missing or noisy modalities. Proceedings of machine learning research 252 (2024), https–proceedings. [14] Felipe Giuste, Wenqi Shi, Yuanda Zhu, Tarun Naren, Monica Isgut, Ying Sha, Li Tong, Mitali Gupte, and May D Wang. 2022. Explainable artificial intelli-gence methods in combating pandemics: A systematic review. IEEE Reviews in Biomedical Engineering 16 (2022), 5–21. [15] Felipe O Giuste, Lawrence L He, Monica Isgut, Wenqi Shi, Blake J Anderson, and May D Wang. 2021. Automated risk assessment of COVID-19 patients at diagnosis using electronic healthcare records. In 2021 IEEE EMBS International Conference on Biomedical and Health Informatics (BHI) . IEEE, 1–4. [16] Gonzalo C Gutiérrez-Tobal, Daniel Álvarez, Fernando Vaquerizo-Villar, Andrea Crespo, Leila Kheirandish-Gozal, David Gozal, Félix del Campo, and Roberto Hornero. 2021. Ensemble-learning regression to estimate sleep apnea severity , , Nnamdi et al. 
+
+using at-home oximetry in adults. Applied Soft Computing 111 (2021), 107827. [17] David W Hudgel. 2016. Sleep apnea severity classification—revisited. Sleep 39, 5 (2016), 1165–1166. [18] Shiroh Isono, David S Warner, and Mark A Warner. 2009. Obstructive sleep apnea of obese adults: pathophysiology and perioperative airway management. 
+
+Anesthesiology 110, 4 (2009), 908–921. [19] Bong Gyun Kang, Dongjun Lee, HyunGi Kim, and DoHyun Chung. 2024. Introduc-ing Spectral Attention for Long-Range Dependency in Time Series Forecasting. 
+
+arXiv preprint arXiv:2410.20772 (2024). [20] Brendan T Keenan, H Lester Kirchner, Olivia J Veatch, Kenneth M Borthwick, Vicki A Davenport, John C Feemster, Maged Gendy, Thomas R Gossard, Frances M Pack, Laura Sirikulvadhana, et al . 2020. Multisite validation of a simple electronic health record algorithm for identifying diagnosed obstructive sleep apnea. Journal of Clinical Sleep Medicine 16, 2 (2020), 175–183. [21] Pang Wei Koh, Thao Nguyen, Yew Siang Tang, Stephen Mussmann, Emma Pier-son, Been Kim, and Percy Liang. 2020. Concept bottleneck models. In International conference on machine learning . PMLR, 5338–5348. [22] Jeremy Levy, Daniel Álvarez, Félix Del Campo, and Joachim A Behar. 2023. Deep learning for obstructive sleep apnea diagnosis based on single channel oximetry. 
+
+Nature Communications 14, 1 (2023), 4881. [23] Xilin Li, Frank HF Leung, Steven Su, and Sai Ho Ling. 2022. Sleep apnea detec-tion using multi-error-reduction classification system with multiple bio-signals. 
+
+Sensors 22, 15 (2022), 5560. [24] Caíque Santos Lima. 2022. OxiTidy: motion artifact detection-reduction in pho-toplethysmographic signals using artificial neural networks. (2022). [25] Scott M Lundberg and Su-In Lee. 2017. A unified approach to interpreting model predictions. Advances in neural information processing systems 30 (2017). [26] M Melanie Lyons, Nitin Y Bhatt, Allan I Pack, and Ulysses J Magalang. 2020. Global burden of sleep-disordered breathing and its implications. Respirology 25, 7 (2020), 690–702. [27] Xiaoping Ming, Minlan Yang, and Xiong Chen. 2021. Metabolic bariatric surgery as a treatment for obstructive sleep apnea hypopnea syndrome: review of the literature and potential mechanisms. Surgery for Obesity and Related Diseases 17, 1 (2021), 215–220. [28] Amal K Mitra, Azad R Bhuiyan, and Elizabeth A Jones. 2021. Association and risk factors for obstructive sleep apnea and cardiovascular diseases: a systematic review. Diseases 9, 4 (2021), 88. [29] Stefano Nardini, Ulisse Corbanese, Alberto Visconti, Jacopo Dalle Mule, Clau-dio M Sanguinetti, and Fernando De Benedetto. 2023. Improving the manage-ment of patients with chronic cardiac and respiratory diseases by extending pulse-oximeter uses: the dynamic pulse-oximetry. Multidisciplinary Respiratory Medicine 18, 1 (2023). [30] Micky C Nnamdi, Junior Ben Tamo, Sara Stackpole, Wenqi Shi, Benoit Marteau, and May Dongmei Wang. 2023. Model confidence calibration for reliable covid-19 early screening via audio signal analysis. In Proceedings of the 14th ACM International Conference on Bioinformatics, Computational Biology, and Health Informatics . 1–6. [31] Micky C Nnamdi, Wenqi Shi, J Ben Tamo, Henry J Iwinski, J Michael Wattenbarger, and May D Wang. 2023. Concept Bottleneck Model for Adolescent Idiopathic Scoliosis Patient Reported Outcomes Prediction. In 2023 IEEE EMBS International Conference on Biomedical and Health Informatics (BHI) . IEEE, 1–4. [32] Stuart F Quan, Barbara V Howard, Conrad Iber, James P Kiley, F Javier Nieto, George T O’Connor, David M Rapoport, Susan Redline, John Robbins, Jonathan M Samet, et al. 1997. The sleep heart health study: design, rationale, and methods. 
+
+Sleep 20, 12 (1997), 1077–1085. [33] Asher Qureshi, Robert D Ballard, and Harold S Nelson. 2003. Obstructive sleep apnea. Journal of Allergy and Clinical Immunology 112, 4 (2003), 643–651. [34] Susan Redline, Peter V Tishler, Tor D Tosteson, John Williamson, Kenneth Kump, Ilene Browner, Veronica Ferrette, and Patrick Krejci. 1995. The familial aggrega-tion of obstructive sleep apnea. American journal of respiratory and critical care medicine 151, 3 (1995), 682–687. [35] Abraham Savitzky and Marcel JE Golay. 1964. Smoothing and differentiation of data by simplified least squares procedures. Analytical chemistry 36, 8 (1964), 1627–1639. [36] Ramprasaath R Selvaraju, Michael Cogswell, Abhishek Das, Ramakrishna Vedan-tam, Devi Parikh, and Dhruv Batra. 2017. Grad-cam: Visual explanations from deep networks via gradient-based localization. In Proceedings of the IEEE interna-tional conference on computer vision . 618–626. [37] Chamara V Senaratna, Jennifer L Perret, Caroline J Lodge, Adrian J Lowe, Brit-tany E Campbell, Melanie C Matheson, Garun S Hamilton, and Shyamali C Dharmage. 2017. Prevalence of obstructive sleep apnea in the general population: a systematic review. Sleep medicine reviews 34 (2017), 70–81. [38] Mahmoud Y Shams, Ahmed M Elshewey, El-Sayed M El-kenawy, Abdelhameed Ibrahim, Fatma M Talaat, and Zahraa Tarek. 2024. Water quality prediction using machine learning models based on grid search method. Multimedia Tools and Applications 83, 12 (2024), 35307–35334. [39] Wenqi Shi, Felipe O Giuste, Yuanda Zhu, Ben J Tamo, Micky C Nnamdi, Andrew Hornback, Ashley M Carpenter, Coleman Hilton, Henry J Iwinski, J Michael Wat-tenbarger, et al . 2025. Predicting pediatric patient rehabilitation outcomes after spinal deformity surgery with artificial intelligence. Communications Medicine 5, 1 (2025), 1. [40] Wenqi Shi, Mitali S Gupte, and May D Wang. 2021. Learning from heterogeneous data via contrastive learning: An application in multi-source covid-19 radiog-raphy. In 2021 IEEE EMBS International Conference on Biomedical and Health Informatics (BHI) . IEEE, 1–4. [41] Wenqi Shi*, Ran Xu*, Yuchen Zhuang, Yue Yu, Jieyu Zhang, Hang Wu, Yuanda Zhu, Joyce Ho, Carl Yang, and May D Wang. 2024. Ehragent: Code empowers large language models for few-shot complex tabular reasoning on electronic health records. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing . Association for Computational Linguistics, 22315–22339. [42] J Ben Tamo, Micky C Nnamdi, Lea Lesbats, Wenqi Shi, Yishan Zhong, and May D Wang. 2023. Uncertainty-aware ensemble learning models for out-of-distribution medical imaging analysis. In 2023 IEEE International Conference on Bioinformatics and Biomedicine (BIBM) . IEEE, 4243–4250. [43] Tue T Te, Brendan T Keenan, Olivia J Veatch, Mary Regina Boland, Rebecca A Hubbard, and Allan I Pack. 2024. Identifying clusters of patient comorbidities associated with obstructive sleep apnea using electronic health records. Journal of Clinical Sleep Medicine 20, 4 (2024), 521–533. [44] MB Uddin, CM Chow, and SW Su. 2018. Classification methods to detect sleep apnea in adults based on respiratory and oximetry signals: a systematic review. 
+
+Physiological measurement 39, 3 (2018), 03TR01. [45] Ahmed Uzair, Muhammad Waseem, Aun Bin Shahid, Nauman I Bhatti, Muham-mad Arshad, Asher Ishaq, Muhammad Sajawal, Zoha Toor, and Osama Ahmad. 2024. Correlation Between Body Mass Index and Apnea-Hypopnea Index or Nadir Oxygen Saturation Levels in Patients With Obstructive Sleep Apnea. Cureus 16, 4 (2024). [46] Tom Van Steenkiste, Willemijn Groenendaal, Dirk Deschrijver, and Tom Dhaene. 2018. Automated sleep apnea detection in raw respiratory signals using long short-term memory neural networks. IEEE journal of biomedical and health informatics 23, 6 (2018), 2354–2364. [47] Janani Venugopalan, Li Tong, Hamid Reza Hassanzadeh, and May D Wang. 2021. Multimodal deep learning models for early detection of Alzheimer’s disease stage. 
+
+Scientific reports 11, 1 (2021), 3254. [48] Sofiya Vyshnya, Rachel Epperson, Felipe Giuste, Wenqi Shi, Andrew Hornback, and May D Wang. 2024. Optimized clinical feature analysis for improved cardio-vascular disease risk screening. IEEE Open Journal of Engineering in Medicine and Biology 5 (2024), 816–827. [49] Cheng Wan, Micky C Nnamdi, Wenqi Shi, Benjamin Smith, Chad Purnell, and May D Wang. 2024. Advancing Sleep Disorder Diagnostics: A Transformer-based EEG Model for Sleep Stage Classification and OSA Prediction. IEEE Journal of Biomedical and Health Informatics (2024). [50] Cheng Wan, Hongyuan Yu, Zhiqi Li, Yihang Chen, Yajun Zou, Yuqing Liu, Xu-anwu Yin, and Kunlong Zuo. 2023. Swift Parameter-free Attention Network for Efficient Super-Resolution. arXiv preprint arXiv:2311.12770 (2023). [51] Hang Wu, Wenqi Shi, Anirudh Choudhary, and May D Wang. 2024. Clinical decision making under uncertainty: a bootstrapped counterfactual inference approach. BMC Medical Informatics and Decision Making 24, 1 (2024), 1–15. [52] Hang Wu, Wenqi Shi, and May D Wang. 2024. Developing a novel causal inference algorithm for personalized biomedical causal graph learning using meta machine learning. BMC Medical Informatics and Decision Making 24, 1 (2024), 137. [53] Junhao Wu and Zhaocai Wang. 2022. A hybrid model for water quality prediction based on an artificial neural network, wavelet transform, and long short-term memory. Water 14, 4 (2022), 610. [54] Ran Xu, Yuchen Zhuang, Yishan Zhong, Yue Yu, Xiangru Tang, Hang Wu, May D Wang, Peifeng Ruan, Donghan Yang, Tao Wang, et al . 2025. MedAgentGym: Training LLM Agents for Code-Based Medical Reasoning at Scale. arXiv preprint arXiv:2506.04405 (2025). [55] Terry Young, Paul E Peppard, and Daniel J Gottlieb. 2002. Epidemiology of obstructive sleep apnea: a population health perspective. American journal of respiratory and critical care medicine 165, 9 (2002), 1217–1239. [56] Xin Zan, Di Wang, Changyue Song, Feng Liu, Xiaochen Xian, and Richard Berry. 2025. Weakly Supervised Deep Learning for Monitoring Sleep Apnea Sever-ity Using Coarsegrained Labels. IEEE Transactions on Automation Science and Engineering (2025). [57] Guo-Qiang Zhang, Licong Cui, Remo Mueller, Shiqiang Tao, Matthew Kim, Michael Rueschman, Sara Mariani, Daniel Mobley, and Susan Redline. 2018. The National Sleep Research Resource: towards a sleep data commons. Journal of the American Medical Informatics Association 25, 10 (2018), 1351–1358. [58] Ying Y Zhao, Rui Wang, Kevin J Gleason, Eldrin F Lewis, Stuart F Quan, Claudia M Toth, Michael Morrical, Michael Rueschman, Jia Weng, James H Ware, et al . 2017. Effect of continuous positive airway pressure treatment on health-related quality of life and sleepiness in high cardiovascular risk individuals with sleep apnea: Best Apnea Interventions for Research (BestAIR) Trial. Sleep 40, 4 (2017), zsx040. Supplementary , , 
+
+A Data Preprocessing Details A.1 Clinical Data 
+
+The clinical features utilized in this study included key demographic, anthropometric, cardiovascular, lifestyle, and comorbidity features directly extracted from patient records. Specifically, the following features were considered: ethnicity, body mass index (BMI), systolic blood pressure (SBP), diastolic blood pressure (DBP), age, current smoking status, race, weight (wtkg), height (htcm), and hyperten-sion status (htnx). These features were chosen for their relevance to the clinical context of the study and their potential to influence the predictive performance of the models. Minimal preprocessing was applied to the extracted clinical features to maintain the integrity and interpretability of the raw clinical information. Instances with missing data in any of the features were excluded to maintain the consistency and quality of the dataset. This ensured that the model only learned from complete and reliable data, reducing potential noise or bias from imputation. Categorical variables were encoded into numerical formats for direct use in the modeling framework. One-hot encoding was applied to create binary vector represen-tations for multi-class categories, while label encoding was used for binary variables. These encoding strategies ensured that cat-egorical variables contributed effectively to the predictive model without introducing artificial ordinal biases. The resulting features were represented as vectors without further transformations or dimensionality reduction. These vectors were concatenated with intermediate predictions from SLAM , creating a unified feature set. This integration preserved the granularity of the clinical data while enhancing the feature space with learned representations from the predictive model. The resulting feature set was used as input to a regression model. 
+
+A.2 Oximetry Signal 
+
+To ensure signal consistency, reduce noise, and prepare the data for training, we employed a comprehensive preprocessing pipeline. Proper preprocessing is essential for mitigating uncertainties and artifacts that can significantly impact analysis outcomes and de-grade signal quality. The steps in this pipeline include: 
+
+• Signals shorter than a predefined length of 25,200 data points were padded with zeros, while signals exceeding this length were truncated. This padding or truncation ensured that all signals had consistent input dimensions. 
+
+• High-frequency noise is a common issue in oximetry signals, as it can distort the data and compromise analysis accuracy. To address this issue, we employed the Savitzky-Golay (savgol) filter [ 35 ], a low-pass filter widely recognized for its capability to smooth signals while preserving the underlying signal struc-ture and trends. The savgol filter operates by fitting successive subsets of the signal to low-degree polynomials, thereby mini-mizing noise without distorting the inherent structure of the data. In alignment with the literature, savgol filter was se-lected for its proven efficacy in noise reduction and artifact suppression, making it particularly suitable for this application [7, 10, 24]. 
+
+• Missing or non-physiological values within the signals were addressed using linear interpolation. This approach preserved the continuity of the signal and mitigated the potential impact of data loss. 
+
+• Lastly, all signals were normalized to ensure consistency. Stan-dardization was performed by transforming each signal to have a mean of zero and a standard deviation of one, a process that removes scale differences and centers the data around zero. Unlike conventional approaches that partition signals into smaller segments (e.g., 30-second windows), the entire preprocessed signal of 25,200 data points was retained and utilized as a single sequence for training. This approach was designed to preserve the temporal dependencies and long-term patterns within the data, enabling the model to capture clinically relevant trends more effectively [19]. 
+
+B SLeep Annotation Model ( SLAM ) Details 
+
+SLAM , which relies on human control and supervision, incorporates a deep attention layer (DAL) to improve the estimation and analy-sis of time series data (oximetry signal). The model takes an input sequence X ∈ R𝑛 ×𝑑 and a set of parameters 𝜃 to generate concepts 
+
+C ∈ R𝑚 . First, the input is reshaped to the dimensions (𝑛, 𝑑 ). Then, the reshaped input passes through a series of 𝑁 𝑐 convolutional layers, each consisting of 𝑓 𝑖 filters with kernel size 𝑘 𝑖 , followed by batch normalization, leaky rectified linear unit (ReLU) activation with parameter 𝛼 , and max pooling with pool size 𝑝 and stride 𝑠 .The output of the convolutional layers is then processed by two Bidirectional LSTM (BiLSTM) layers, each with a hidden state di-mension of ℎ. To avoid overfitting, dropout regularization with rate 
+
+𝑟 is applied to the BiLSTM output. Regarding the BiLSTM processing, SLAM extends the traditional LSTM framework by processing the data in both forward and re-verse directions, capturing dependencies that occur at different time scales as follows: 
+
+−→
+
+h𝑡 = LSTM (x𝑡 , −−−→
+
+h𝑡 −1; 𝜃 fw ), (5) 
+
+←−
+
+h𝑡 = LSTM (x𝑡 , ←−−−
+
+h𝑡 +1; 𝜃 bw ), (6) where −→
+
+h𝑡 and ←−
+
+h𝑡 represent the hidden states at time 𝑡 for the for-ward and backward LSTMs, respectively. The outputs from both directions are combined to form a unified representation: 
+
+h𝑡 = [−→
+
+h𝑡 ; ←−
+
+h𝑡 ], (7) This combined output h𝑡 captures information from both past and future contexts, leading to a more comprehensive understanding of the input sequence. Following the BiLSTM and dropout layer, the model applies DAL (C) to weigh the importance of each timestep’s output. A Dense layer is then applied to the output from DAL to estimate the knowledge-guided metrics. Training of the model involves compil-ing with an Adam optimizer and using a mean absolute error loss function: 
+
+L = 1
+
+𝑛 
+
+> 𝑛
+
+∑︁ 
+
+> 𝑖 =1
+
+|C𝑖 − ˆC𝑖 |, (8) where ˆC𝑖 denotes the model’s prediction of knowledge-guided met-rics for the 𝑖 -th sample. 
+
+SLAM learns knowledge-guided metrics through a combination of convolutional layers, BiLSTM layers, and DAL. The convolutional layers capture local patterns and features from the input signals, , , Nnamdi et al. 
+
+Table 5: Overview of dataset details, including training, validation, and testing splits, participant counts, demographics (age, BMI, gender, ethnicity, and race), and AHI categories (Healthy, Mild, Moderate, Severe) with corresponding mean and standard deviation. Description Train Validation Test 
+
+Recording (Counts) 3539 1531 4745 Duration (Hours) 24,773 10,717 33,215 Gender(Male/Female) 47.40/52.67 48.07/51.93 57.74/42.26 Age (Years) 63 .27 ± 11 .23 63 .47 ± 10 .87 65 .57 ± 15 .42 
+
+Body Mass Index (BMI) 28 .22 ± 5.10 27 .99 ± 4.97 28 .46 ± 5.66 
+
+Ethnicity (Non-Hispanic/Hispanic) 95.51/4.49 94.91/5.09 97.01/2.99 Race (White/Black/Others) 85.33/8.62/6.05 45.36/51.18/3.46 82.11/12.46/5.44 
+
+Apnea-Hypopnea Index (AHI) 
+
+Healthy 2.45 ± 1.40 2.34 ± 1.40 2.32 ± 1.39 
+
+Mild 9.30 ± 2.81 9.27 ± 2.82 9.35 ± 2.81 
+
+Moderate 20 .92 ± 4.11 21 .08 ± 4.41 21 .15 ± 4.22 
+
+Severe 47 .69 ± 16 .78 46 .37 ± 16 .64 46 .12 ± 14 .98 
+
+while the BiLSTM layers model the temporal dependencies. The DAL allows the model to focus on the most relevant parts of the in-put sequence to make predictions. By combining these components, our model can effectively learn and estimate knowledge-guided metrics from raw input signals. 
+
+C Deep Attention Layer (DAL) Details 
+
+SLAM integrates DAL to focus on the most relevant parts of the input sequence. DAL takes an input sequence x = (𝑥 1, . . . , 𝑥 𝑇 ) and a set of attention units 𝑢 to generate a context vector c. The layer first initializes the attention weight matrix W ∈ R𝑑 ×𝑢 , context weight matrix W𝑐 ∈ R𝑢 ×1, and attention bias b ∈ R𝑇 ×𝑢 [50 ]. It then computes the attention features F using: 
+
+F = tanh (Wx + b). (9) Next, the attention scores e are calculated using: 
+
+e = FW 𝑐 , (10) 
+
+e = squeeze (e, axis = −1), (11) followed by a squeeze operation on the last axis. The attention weights 𝜶 are then computed by applying a softmax function to e:
+
+𝜶 = softmax (e). (12) If 𝜶 is not expanded, an expand dims operation is applied on the last axis. Finally, the context vector c is initialized as a zero vector and updated iteratively for each time step 𝑡 using: 
+
+c = c + x𝑡 ⊙ 𝜶 𝑡 , (13) where ⊙ denotes element-wise multiplication.The context vector c
+
+is then returned as the output of the DAL. 
+
+D Regression Model Details 
+
+The regression models considered in this study for estimating the AHI after concatenating the estimated sleep annotation with the vectors from the clinical data is the Multilayer Perceptron Regressor (MLP-Regressor ). This model have gained significant traction in the realm of machine learning for their ability to model complex nonlinear relationships. Unlike traditional linear regression models, 
+
+MLP-Regressor model leverages a feed-forward mechanism to cap-ture intricate patterns within data, making them suitable for a wide range of regression tasks. MLP-Regressor models are among the numerous neural network designs that are basic in framework, sim-ple to execute, and have strong fault tolerance, resilience, scalability, and outstanding nonlinear mapping capabilities [38, 53]. 
+
+E Evaluation Metrics 
+
+The following evaluation metrics were considered for evaluating the regression task (before converting the estimated AHI into the four levels of severity), 
+
+• Coefficient of Determination , R-squared ( 𝑅 2) measures how well the independent variable(s) in a statistical model explains the variation in the dependent variable. 
+
+𝑅 2 = 1 −
+
+Í𝑛 𝑘 =1 (𝑦 𝑘 − ˆ𝑦 𝑘 )2
+
+Í𝑛 𝑖 =1 (𝑦 𝑘 − ¯𝑦 )2 , (14) where 𝑦 𝑘 are the observed values, ˆ𝑦 𝑘 are the predicted values, and ¯𝑦 is the mean of the observed values. 
+
+• Intraclass Correlation Coefficient (𝐼𝐶𝐶 ) measures the reliability of estimated AHI. 𝐼𝐶𝐶 is subject to a variety of statistical assumptions such as normality and stable vari-ance, which are rarely considered in health applications [ 5]. Mathematically, it is expressed as 
+
+𝐼𝐶𝐶 = 𝑀𝑆 1 − 𝑀𝑆 𝑤 
+
+𝑀𝑆 1 + ( 𝑘 − 1)𝑀𝑆 𝑤 + 𝑘 𝑛 (𝑀𝑆 𝑖 − 𝑀𝑆 𝑤 ) , (15) where 𝑀𝑆 1 is the instance mean square, 𝑀𝑆 𝑤 is the mean square error, 𝑀𝑆 𝑖 is the observers mean square and 𝑘 is the number of observation. After the conversion of the estimated AHI to the four levels of severity, the confusion matrix, precision, 𝐹 1 score, sensitivity, and specificity were used to evaluate the accuracy of the model’s estimated values.

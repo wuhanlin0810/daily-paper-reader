@@ -1,0 +1,406 @@
+Title: Visually-Guided Controllable Medical Image Generation via Fine-Grained Semantic Disentanglement
+
+URL Source: https://arxiv.org/pdf/2603.10519v1
+
+Published Time: Thu, 12 Mar 2026 00:47:57 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# Visually-Guided Controllable Medical Image Generation via Fine-Grained Semantic Disentanglement 
+
+Xin Huang 1,2,†, Junjie Liang 1,2,†, Qingshan Hou 1,2, Peng Cao 1,2,3(B), Jinzhu Yang 1,2,3, Xiaoli Liu 4, and Osmar R. Zaiane 5 
+
+> 1
+
+Computer Science and Engineering, Northeastern University, Shenyang, China  
+
+> 2
+
+Key Laboratory of Intelligent Computing in Medical Image of Ministry of Education, Northeastern University, Shenyang, China  
+
+> 3
+
+National Frontiers Science Center for Industrial Intelligence and Systems Optimization, Shenyang, China 
+
+caopeng@cse.neu.edu.cn  
+
+> 4
+
+AiShiWeiLai AI Research, China  
+
+> 5
+
+Amii, University of Alberta, Edmonton, Alberta, Canada 
+
+Abstract. Medical image synthesis is crucial for alleviating data scarcity and privacy constraints. However, fine-tuning general text-to-image (T2I) models remains challenging, mainly due to the significant modality gap between complex visual details and abstract clinical text. In addition, semantic entanglement persists, where coarse-grained text embeddings blur the boundary between anatomical structures and imaging styles, thus weakening controllability during generation. To address this, we pro-pose a Visually-Guided Text Disentanglement framework. We introduce a cross-modal latent alignment mechanism that leverages visual priors to explicitly disentangle unstructured text into independent semantic rep-resentations. Subsequently, a Hybrid Feature Fusion Module (HFFM) injects these features into a Diffusion Transformer (DiT) through sep-arated channels, enabling fine-grained structural control. Experimental results in three datasets demonstrate that our method outperforms exist-ing approaches in terms of generation quality and significantly improves performance on downstream classification tasks. The source code is avail-able at https://github.com/hx111/VG-MedGen .
+
+Keywords: Medical Image Synthesis · Diffusion Transformer · Cross-Modal Alignment · Data Augmentation 
+
+1 Introduction 
+
+High-quality annotated medical imaging datasets form the foundation for de-veloping robust artificial intelligence (AI)-assisted diagnostic systems. However, acquiring such data remains challenging due to the scarcity of rare medical cases, the high cost of expert annotations, and strict privacy regulations[19,11,6]. To  
+
+> †
+
+The two authors contribute equally to this work.   
+
+> arXiv:2603.10519v1 [cs.CV] 11 Mar 2026 2X. Huang et al.
+> Fig. 1. Impact of text prompts for comparable methods on image synthesis. Anatomical structures and modality styles are highlighted in red and blue, respectively.
+
+mitigate these challenges, Generative AI, particularly Latent Diffusion Models (LDM) [17] and their Transformer-based variants, such as DiT [14], have grad-ually emerged as an effective approach to data enhancement. By conditioning themselves on textual descriptions, these models are able to synthesize diverse medical images, offering new opportunities to alleviate long-tailed medical dis-tributions [13,8,21]. Despite recent progress in adapting general-purpose text-to-image models to the medical domain [4,10], existing approaches still exhibit limited anatomical controllability. This limitation primarily stems from the intrinsic semantic gran-ularity gap between medical images and clinical text: images encode rich spatial and geometric details, while text is highly compressed, providing insufficient guidance for fine-grained structure generation. Moreover, commonly used text encoders produce global semantic embeddings in which structural and textural styles are implicitly averaged, blurring their boundaries in the latent space. As illustrated in Fig. 1, despite explicit prompts regardless of prompt lengths, de-tails specific structural (e.g., irregular shape) and textural styles, models such as Med-Art fail to generate images with these characteristics. The generated images disregard both the desired irregularity and internal texture, indicating that structural cues are progressively diluted during diffusion. Such anatomi-cally implausible generations substantially limit the effectiveness of synthetic data for improving downstream diagnostic robustness. Moreover, these models are computationally expensive, whereas our method reduces inference param-eters to 833M (84.7% fewer compared with Med-Art) and achieves 1.457s per image (1.77 × faster), enabling efficient clinical deployment. To address these issues, we propose a Visually-Guided Text Disentanglement Diffusion Framework. Our core insight is that, although textual representations are inherently abstract and susceptible to entanglement, the visual features are Visually-Guided Generation via Semantic Disentanglement 3𝑆𝑒𝑔𝑚𝑒𝑛𝑡𝑜𝑟 
+
+> 𝑃𝑟𝑒𝑑 𝐺𝑇
+> ℒ𝑑𝑖𝑐𝑒
+> VAE
+> E𝑛coder
+
+Z0 Z𝑡 ⋯ ෨𝑋 
+
+> ℒ𝑀𝑠𝑒
+
++𝑛𝑜𝑖𝑠 𝑒 𝑇  +𝑝𝑟𝑒𝑑 _𝑛𝑜𝑖𝑠 𝑒 𝑇 
+
+> ℒ𝑐𝑜𝑙𝑜𝑟
+
+Z𝑡  Z0
+
+⋯
+
+Captioning Prompt   
+
+> VAE
+> Decoder
+> Gumbel Softmax GAP
+> HFFM
+> projection
+> Simplified Text
+
+Clinical 
+
+BERT 
+
+𝑇𝑖𝑚𝑒𝑠𝑡𝑒𝑝 𝑡 
+
+𝑋 𝑡 
+
+𝑋 0
+
+HFFM 
+
+𝐸 𝑎 
+
+> 𝑇
+
+𝐸 𝑠 
+
+> 𝑇
+
+Q
+
+KV 
+
+Q
+
+KV 
+
+Q
+
+KV 
+
+Q
+
+KV  
+
+> VAE
+> Decoder
+> 𝑞 (𝑧 |𝑥 )
+> 𝜇 𝑧
+> Σ𝑧
+
+⊙   
+
+> 𝑝 (𝒛 )=𝒩 (𝟎 ,𝑰 )
+> Sample
+> ℒ𝑟𝑒𝑐
+> ℒ𝑘𝑙
+> Q
+> KV
+> Q
+> KV
+> Q
+> KV
+> Q
+> KV
+
+𝐸 𝑠 
+
+> 𝐼
+
+𝐸 𝑎 
+
+> 𝐼
+
+𝐷 𝐼  𝐷 𝑇 
+
+𝐸 𝑎 
+
+> 𝑇
+
+𝐸 𝑠 
+
+> 𝑇
+> ℒ𝑎𝑙𝑖𝑔𝑛
+> ℒ𝑎𝑙𝑖𝑔𝑛
+> Hybrid Feature Fusion Module (HFFM)
+> LayerNorm
+> Linear
+> GELU
+> Linear
+> Anatomy
+> Embedding
+> Style
+> Embedding
+> 𝑆 𝑐𝑜𝑛𝑑
+
+⊙ Element -wise multiplication  
+
+> Element -wise addition
+> Trainable
+> Frozen
+> C
+> CConcatenation
+> Training
+> Inference
+> LayerNorm
+> Linear
+> GELU
+> Linear
+
+𝐸 𝑎  
+
+> 𝐼
+
+：Image Anatomy Encoder 
+
+𝐸 s
+
+> 𝐼
+
+：Image Style Encoder 
+
+𝐸 𝑎 
+
+> 𝑇
+
+：Text Anatomy Encoder 
+
+𝐸 𝑠 
+
+> 𝑇
+
+：Text Style Encoder 
+
+> ℒ𝑟𝑒𝑐
+
+Clinical 
+
+BERT 
+
+> 𝑆 𝑐𝑜𝑛𝑑
+> 𝑆 𝑐𝑜𝑛𝑑
+
+𝑓 𝑠 𝐼 
+
+𝑓 𝑎  
+
+> 𝐼
+
+𝑓 𝑎 
+
+> 𝑇
+
+𝑓 𝑠 𝑇 
+
+𝑓 𝑡 መ𝑓 𝑡  
+
+> Visual Attribute Captioning
+> Visual ly -Guided Text Disentanglement & Alignment
+
+𝑓 𝑠 𝑇 
+
+𝑓 𝑎 
+
+> 𝑇
+
+𝑓 𝑡 
+
+𝑥  ො𝑥 
+
+> Text -to -Image Diffusion Generation
+
+መ𝑓 𝑎 
+
+> 𝐼
+
+መ𝑓 𝑠 𝐼 
+
+𝑇𝑖𝑚𝑒𝑠𝑡𝑒𝑝 𝑡   
+
+> An dermoscopic image...dark brown to
+> reddish -brown patch. Rough, cracked
+> texture...irregular border...variety of shapes.
+
+T5 
+
+Visual Prompt Generation 
+
+> Tokens>120
+> Yes
+> No
+
+𝑓 𝑎  
+
+> 𝑇
+
+𝑓 𝑠 𝑇  
+
+> Descriptions
+> Anatomy
+> Symmetry
+> Boundary regularity
+> Overall shape
+> Style
+> Color distributions
+> Surface textures
+> Dermoscopic patterns
+
+Fig. 2. The overall architecture of our proposed Visually-Guided Text Disentangle-ment Diffusion Framework. Note that only the lightweight feature projector and the Transformer with LoRA adapters are required in the inference stage. 
+
+naturally more separable. Accordingly, we adopt a visually guided strategy that leverages visual features as priors to constrain the learning of textual repre-sentations. Specifically, we design a cross-modal disentanglement and alignment module that introduces a pretrained visual encoder as supervision, guiding the text encoder in the latent space to explicitly disentangle input prompts into independent anatomical and style-related features. Furthermore, to ensure that these disentangled features can effectively control the generation process, we in-troduce a Hybrid Feature Fusion Module (HFFM), which integrates anatomical and style information through separate channels and injects them into the Dif-fusion Transformer (DiT). This design significantly enhances the diversity and clinical value of the generated samples without sacrificing fidelity. The main contributions of this work are summarized as follows: 
+
+– We investigate whether visual guidance can enable precise semantic disentan-glement, and propose to leverage visual supervision to address the semantic entanglement problem in medical T2I generation. 4 X. Huang et al. 
+
+– We design a cross-modal latent alignment strategy and a hybrid feature fu-sion module, enabling the generative model to learn fine-grained, biologically plausible features directly from unstructured text. Our model is designed to be lightweight, requiring fewer parameters during inference. 
+
+– Extensive experiments on three medical datasets demonstrate that our method outperforms existing approaches in generation quality and diversity. Notably, the synthesized data yields significant performance gains in downstream clas-sification tasks. 
+
+2 Method 
+
+2.1 Visual Attribute Captioning 
+
+To mitigate the semantic sparsity of existing medical datasets, which lack fine-grained visual descriptions, we construct an automated attribute captioning pipeline using LLaVA-Next [12]. We design constrained prompt templates to suppress hallucinations, explicitly directing the VLM to focus on two orthog-onal dimensions: Anatomy (e.g., symmetry, boundary, shape) and Style (e.g., color distribution, texture patterns). The prompt follows a structured format: "Describe the [Class] image using features: [Attribute List]". Subsequently, a T5 model [16] refines the generated descriptions. This process yields high-quality image-text pairs rich in structural and textural style details, providing robust priors for the subsequent cross-modal alignment. 
+
+2.2 Visually-Guided Text Disentanglement & Alignment 
+
+To resolve the high semantic entanglement between anatomical structures and modality styles in medical text, we design a visually-guided cross-modal dis-entanglement module. This module leverages the inherent fine-grained visual features as supervisory to guide the text encoder to map unstructured text into disentangled semantic representations in the latent space. 
+
+Visual Disentanglement. We construct a dual-branch visual encoder to ex-tract anatomical and style representations from medical images. As illustrated in Fig.2, given an input image x, the Image Anatomy Encoder EIa [18] adopts a U-Net-based architecture to capture spatial and geometric structures such as lesion shape and boundaries. Its output feature map ˆf Ia is constrained by a lightweight segmentation head with a Dice loss Ldice . This explicit supervision encourages EIa to focus exclusively on anatomical structure. Meanwhile, the Im-age Style Encoder EIs models imaging appearance attributes including texture, color, and intensity. Following a variational formulation, EIs is implemented as a convolutional encoder that takes the concatenation of the input image x and the extracted anatomical feature ˆf Ia as input, and maps it into a Gaussian latent distribution parameterized by (μ, σ ). A latent style code ˆf Is is then sampled via the reparameterization trick. The Kullback-–Leibler divergence loss Lkl is ap-plied to regularize the style latent space toward a standard normal distribution, Visually-Guided Generation via Semantic Disentanglement 5
+
+ensuring smoothness and continuity. To maintain information integrity, an image decoder DI is introduced to reconstruct the original image from the disentangled representations. The overall objective function for the visual disentanglement is defined as: 
+
+Limg = LIrec + λdice Ldice + λkl Lkl (1) 
+
+Text Disentanglement & Cross-Modal Alignment. After training the vi-sual branch, all visual encoders are frozen to serve as stable and reliable su-pervision signals. Given a textual description generated by a vision-language model (VLM), we first extract a base semantic embedding using a frozen Clin-icalBERT encoder [2]. To endow the text representation with disentanglement capability, we design two text mapping networks: a text anatomy encoder ETa
+
+and a text style encoder ETs . Unlike convolutional visual encoders, both ETa and 
+
+ETs are implemented as lightweight multi-layer perceptrons, each consisting of two fully connected layers with ReLU activation and dropout. These networks operate as projection heads that map the global, entangled semantic embed-ding into low-dimensional latent spaces corresponding to anatomical structure and imaging style, respectively. The core of this module lies in the cross-modal latent alignment mechanism. Specifically, we enforce the text anatomical repre-sentation f Ta to align with the visual anatomical feature f Ia , while the text style representation f Ts is aligned with the visual style feature f Is . This alignment is achieved by minimizing the cosine embedding distance between correspond-ing modality pairs. Through such explicit supervision, the text encoders learn to decompose unstructured clinical language into independent structural and appearance-related control signals. To prevent semantic loss during disentangle-ment, we introduce a Text Auxiliary Decoder DT to reconstruct the original text embeddings. The total objective function for this stage is defined as: 
+
+Ltext = λaD(f Ta , f Ia ) + λsD(f Ts , f Is ) + LTrec (2) 
+
+Hybrid Feature Fusion (HFFM): To leverage the disentangled features f Ta
+
+and f Ts for fine-grained control over the generation process, we design a Hybrid Feature Fusion Module. We introduce two learnable type embeddings, ea and 
+
+es, as semantic identities, into the condition embedding cin = concat (Pa(f Ta ) + 
+
+ea, Ps(f Ts ) + es), to inject into the cross-attention layers of DiT, thereby inde-pendently guiding the synthesis of structure and style. 
+
+2.3 Generation Process 
+
+In the generation stage, we inject the disentangled text features into Diffusion Transformer (DiT) [14] and apply Low-Rank Adaptation (LoRA) [7] for fine-tuning the projection parameters of the attention layers. Furthermore, to ensure color fidelity in the generated images, we introduce an online color distribution loss Lcd , constraining the pixel-level mean and variance of the generated images. The total objective function is Ltotal = Lmse + λcd Lcd .6 X. Huang et al.                                                                      
+
+> Table 1. Quantitative comparison on HAM10000, Kvasir-SEG, and BUSI datasets.
+> Model HAM10000 Kvasir-SEG BUSI
+> FID ↓HFD ↓KID ↓FID ↓KFD ↓KID ↓FID ↓BFD ↓KID ↓
+> SD1.5 [17] 100.05 15.45 0.078 119.93 12.34 0.109 159.74 62.15 0.125 SDXL [15] 72.69 8.06 0.058 139.81 9.78 0.154 135.20 55.40 0.098 PixArt-α[3] 68.76 10.14 0.055 67.73 5.24 0.048 100.50 51.94 0.060 MedSegFactory [13] 52.15 4.85 0.042 69.80 4.56 0.058 99.50 43.10 0.055 Med-Art [5] 53.54 9.68 0.049 70.95 5.80 0.051 99.16 43.91 0.062
+> Ours 51.56 3.22 0.036 71.97 3.70 0.063 98.79 42.60 0.050
+
+3 Experiments and Results 
+
+3.1 Dataset and Implementation Datasets. We validated the effectiveness of our method on three public datasets. The HAM10000 dataset [20] contains 10,015 multi-source dermatoscopic images. The Kvasir-SEG dataset [9] includes 1,000 high-quality polyp images with precise annotations. The BUSI dataset [1] consists of 780 high-quality breast ultrasound images and corresponding masks. We randomly split the datasets into training and testing sets with an 8:2 ratio. To address the scarcity of text descriptions in the original datasets, we generated fine-grained text descriptions rich in anatom-ical and modal details for each image using the method described in Sec. 2.1. All images were resized to 512 × 512 resolution to adapt to the generative model. 
+
+Implementation Details. Our framework is trained using PyTorch and the Diffusers library on a single A30 GPU. We selected PixArt-α (512 × 512 ) as the pre-trained DiT backbone. During the fine-tuning stage, we employed the LoRA strategy (Rank=8) for parameter-efficient training, enabling BF16 mixed precision and Gradient Checkpointing to save GPU memory. The model was trained using the AdamW optimizer with an initial learning rate of 1 × 10 −4,coupled with a Cosine Scheduler with a 500-step warmup. The total training epochs are set to 15. For the color loss, we computed it every N = 500 steps with a sampling step of M = 20 .
+
+3.2 Results Evaluation of Modality Alignment. To intuitively verify the effectiveness of this mechanism, we present the t-SNE visualization of the feature space before and after modality alignment in Fig. 3. It demonstrates that our model bridges the modality gap, effectively mapping unstructured text descriptions into the disentangled visual latent space. 
+
+Comparison with the Image Synthesis Methods. We compared our method with Med-Art [5], SD1.5 [17], SDXL [15], MedSegFactory [13] and PixArt-
+
+α [3] on three datasets (Table 1). Generation quality is assessed w.r.t. FID, KID, and HFD. On the HAM10000 dataset, our method achieves the best results Visually-Guided Generation via Semantic Disentanglement 7-40 -20 0 20 40         
+
+> t-SNE 1
+> -40
+> -20
+> 0
+> 20
+> 40
+> t-SNE 2
+> Baseline: Before Alignment (Modality Gap)
+> Image Features
+> Text Features -40 -20 020 40
+> t-SNE 1
+> -40
+> -20
+> 0
+> 20
+> 40
+> t-SNE 2
+> Anatomy Space Alignment
+> Image Features
+> Text Features -40 -20 020 40
+> t-SNE 1
+> -40
+> -20
+> 0
+> 20
+> 40
+> t-SNE 2
+> Style Space Alignment
+> Image Features
+> Text Features
+
+Fig. 3. The t-SNE feature visualization before and after modality alignment. The base-line (Left) exhibits a significant modality gap, where text embeddings are isolated from visual features. In contrast, with our alignment module, the text features are closely aligned with the visual priors in the Anatomy (Middle) and Style (Right) subspaces. 
+
+across all metrics. Specifically, FID is reduced to 51.56 and HFD to 3.22, sig-nificantly outperforming the strong baseline PixArt-α (FID 68.76). This clearly demonstrates the compelling capability of the visually-guided disentanglement strategy in capturing fine-grained medical features. For the more challenging Kvasir-SEG and BUSI datasets, our method also exhibits competitive perfor-mance. Notably, our method consistently maintains the lowest HFD scores (e.g., 3.70 on Kvasir-SEG, better than 5.24 of PixArt-α). This indicates that even when dealing with complex domain gaps, our approach retains a significant advantage in preserving high-frequency details crucial for clinical diagnosis (e.g., mucosal textures and lesion boundaries). Furthermore, as shown in Fig. 4, compared to baseline models like SDXL, images generated by our method are closer to real samples in terms of textural realism and structural consistency. Particularly in dermoscopic images, our model accurately produces complex medical features, such as clearly visible hair details and irregular pigment networks, whereas these subtle features are often over-smoothed or lost in the results of other models. We further compare the model sizes of different methods. Compared with Stable Diffusion 1.5 (1.07B parameters), SDXL (7.5B), PixArt-α (4.9B), and MedSeg-Factory (1.425B), our method requires only 0.833B parameters, achieving a 22% reduction even compared to the smallest baseline. 
+
+Downstream Classification Tasks. To verify the clinical utility of the syn-thetic data, we used the generated images to augment the HAM10000 dataset for training a classifier. Our method achieves the best F1 score (0.6185) and BACC (0.3475) in Table 2, respectively. Although SDXL shows a slight advantage in AUC, our method’s higher F1 and BACC indicate that our generated samples contain richer discriminative features. This confirms that our approach enhances the robustness of diagnostic models and significantly narrows the gap between synthetic and real data. 
+
+Ablation Study. We evaluated the effectiveness of key components on the HAM10000 dataset (Table 3). To validate the effectiveness of text guidance, we compared text descriptions (attribute captioning) with only class labels as guid-8 X. Huang et al. 
+
+Fig. 4. Visual comparison of image synthesis results. 
+
+ance. After removing attribute captioning, FID significantly deteriorated from 51.56 to 69.48. Notably, naive feature concatenation (Naive Feature Concat.) performs even worse than using only class labels (FID 86.24), suggesting that disordered high-dimensional features introduce noise. In contrast, the combina-tion of HFFM and visually-guided disentanglement achieves an FID of 51.56, validating the importance of the structured alignment strategy in generating high-fidelity medical images. 
+
+Table 2. Downstream classification per-formance on HAM10000.                            
+
+> Model F1 ↑BACC ↑AUC ↑
+> SD1.5 0.595 0.304 0.813 SDXL 0.558 0.339 0.841
+> PixArt-α0.536 0.143 0.443 MedSegFactory 0.598 0.345 0.816 Med-Art 0.515 0.333 0.806
+> Ours 0.619 0.348 0.830 Real Data 0.816 0.657 0.964
+
+Table 3. Ablation study of different com-ponents on HAM10000.                   
+
+> Configuration FID ↓HFD ↓KID ↓
+> w/o Attr. Captioning 69.48 11.34 0.059 Naive Feature Concat. 86.24 8.84 0.073 w/o Disentanglement 53.54 9.68 0.049
+> Ours 51.56 3.22 0.036
+
+Visually-Guided Generation via Semantic Disentanglement 9
+
+4 Conclusion 
+
+In this work, we propose a Visually-Guided Text Disentanglement Diffusion Framework for medical T2I generation. By leveraging cross-modal latent align-ment, visual priors are disentangled into anatomical and stylistic representations, which are injected into a DiT backbone via a Hybrid Feature Fusion Module (HFFM) for fine-grained control. Extensive experiments show compelling gen-eration fidelity and diversity, while the generated synthetic data significantly improves downstream diagnostic performance. 
+
+References 
+
+1. Al-Dhabyani, W., Gomaa, M., Khaled, H., Fahmy, A.: Dataset of breast ultrasound images. Data in brief 28 , 104863 (2020) 2. Alsentzer, E., Murphy, J., Boag, W., Weng, W.H., Jindi, D., Naumann, T., Mc-Dermott, M.: Publicly available clinical bert embeddings. In: Proceedings of the 2nd clinical natural language processing workshop. pp. 72–78 (2019) 3. Chen, J., Yu, J., Ge, C., Yao, L., Xie, E., Wu, Y., Wang, Z., Kwok, J., Luo, P., Lu, H., et al.: Pixart-α: Fast training of diffusion transformer for photorealistic text-to-image synthesis. arXiv preprint arXiv:2310.00426 (2023) 4. Chen, W., Wang, P., Ren, H., Sun, L., Li, Q., Yuan, Y., Li, X.: Medical image synthesis via fine-grained image-text alignment and anatomy-pathology prompting. In: International conference on medical image computing and computer-assisted intervention. pp. 240–250. Springer (2024) 5. Guo, C., Christensen, A.N., Hannemose, M.R.: Med-art: Diffusion transformer for 2d medical text-to-image generation. In: MICCAI Workshop on Deep Generative Models. pp. 57–66. Springer (2025) 6. Guo, P., Zhao, C., Yang, D., Xu, Z., Nath, V., Tang, Y., Simon, B., Belue, M., Harmon, S., Turkbey, B., et al.: Maisi: Medical ai for synthetic imaging. In: 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV). pp. 4430–4441. IEEE (2025) 7. Hu, E.J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., Chen, W., et al.: Lora: Low-rank adaptation of large language models. ICLR 1(2), 3 (2022) 8. Huang, P., Fu, J., Guo, B., Li, Z., Wang, Y., Guo, Y.: Vap-diffusion: Enriching descriptions with mllms for enhanced medical image generation. In: International Conference on Medical Image Computing and Computer-Assisted Intervention. pp. 624–633. Springer (2025) 9. Jha, D., Smedsrud, P.H., Riegler, M.A., Halvorsen, P., De Lange, T., Johansen, D., Johansen, H.D.: Kvasir-seg: A segmented polyp dataset. In: International con-ference on multimedia modeling. pp. 451–462. Springer (2019) 10. Jiang, Y., Sun, M., Guo, H., Bai, X., Yan, K., Lu, L., Xu, M.: Anatomical invariance modeling and semantic alignment for self-supervised learning in 3d medical image analysis. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 15859–15869 (2023) 11. Koutsoubis, N., Waqas, A., Yilmaz, Y., Ramachandran, R.P., Schabath, M.B., Rasool, G.: Privacy-preserving federated learning and uncertainty quantification in medical imaging. Radiology: Artificial Intelligence p. e240637 (2025) 12. Liu, H., Li, C., Wu, Q., Lee, Y.J.: Visual instruction tuning. In: Advances in neural information processing systems. vol. 36 (2024) 10 X. Huang et al. 13. Mao, J., Wang, Y., Tang, Y., Xu, D., Wang, K., Yang, Y., Zhou, Z., Zhou, Y.: Med-segfactory: Text-guided generation of medical image-mask pairs. arXiv preprint arXiv:2504.06897 (2025) 14. Peebles, W., Xie, S.: Scalable diffusion models with transformers. In: Proceedings of the IEEE/CVF International Conference on Computer Vision. pp. 4195–4205 (2023) 15. Podell, D., English, Z., Lacey, K., Blattmann, A., Dockhorn, T., Müller, J., Penna, J., Rombach, R.: Sdxl: Improving latent diffusion models for high-resolution image synthesis. arXiv preprint arXiv:2307.01952 (2023) 16. Raffel, C., Shazeer, N., Roberts, A., Lee, K., Narang, S., Matena, M., Zhou, Y., Li, W., Liu, P.J.: Exploring the limits of transfer learning with a unified text-to-text transformer. Journal of machine learning research 21 (140), 1–67 (2020) 17. Rombach, R., Blattmann, A., Lorenz, D., Esser, P., Ommer, B.: High-resolution image synthesis with latent diffusion models. In: Proceedings of the IEEE/CVF conference on computer vision and pattern recognition. pp. 10684–10695 (2022) 18. Ronneberger, O., Fischer, P., Brox, T.: U-net: Convolutional networks for biomed-ical image segmentation. In: Medical image computing and computer-assisted intervention–MICCAI 2015: 18th international conference, Munich, Germany, Oc-tober 5-9, 2015, proceedings, part III 18. pp. 234–241. Springer (2015) 19. Shobayo, O., Saatchi, R.: Developments in deep learning artificial neural network techniques for medical image analysis and interpretation. Diagnostics 15 (9), 1072 (2025) 20. Tschandl, P., Rosendahl, C., Kittler, H.: The ham10000 dataset, a large collection of multi-source dermatoscopic images of common pigmented skin lesions. Scientific data 5(1), 1–9 (2018) 21. Yuan, Z., Fang, Z., Huang, Z., Wu, F., Yao, Y.F., Li, Y.: Adapting pre-trained generative model to medical image for data augmentation. In: International Con-ference on Medical Image Computing and Computer-Assisted Intervention. pp. 79–89. Springer (2024)

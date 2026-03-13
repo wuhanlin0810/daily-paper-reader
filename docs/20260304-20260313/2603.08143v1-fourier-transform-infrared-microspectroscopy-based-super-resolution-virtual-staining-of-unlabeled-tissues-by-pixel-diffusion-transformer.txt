@@ -1,0 +1,1243 @@
+Title: 2603.08143v1.pdf
+
+URL Source: https://arxiv.org/pdf/2603.08143v1
+
+Published Time: Tue, 10 Mar 2026 01:59:05 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+Fourier Transform Infrared 
+
+# microspectroscopy -based super -resolution 
+
+# virtual staining of unlabeled tissues by pixel 
+
+# Diffusion Transformer 
+
+Yudong Tian 1, Xiangyu Zhao 1, Yuqing Liu 1, Bofei Yang 1, and Chongzhao Wu 1, * 
+
+> 1
+
+Center for Biophotonics, Institute of Medical Robotics, School of Biomedical Engineering, 
+
+Shanghai Jiao Tong University, Shanghai, China 
+
+*Corresponding Author 
+
+ABSTRACT: Histological staining is a crucial step in clinical pathological analysis. As the most 
+
+widely use d staining technique, hematoxylin and eosin (H&E) staining enables visualization of 
+
+tissue and cellular morphology, playing an indispensable role in disease diagnosis. However, the 
+
+staining process is usually time -consuming, and the chemical reagents invol ved alter the tissue 
+
+chemistry, limiting its utility for further downstream analysis. Fourier transform infrared (FTIR) 
+
+microspectroscopy has shown promising results for characterizing the biochemical component s of 
+
+unstained tissues, but its results are le ss interpretable for pathologists compared to H&E -stained 
+
+images. Here , we present a diffusion transformer (DiT) -based pixel super -resolution virtual staining 
+
+approach to transform low -resolution FTIR microspectroscopic images of the unstained tissues into 
+
+corr esponding high -resolutio n H&E -stained images. Unlike conventional conditional DiT 
+
+architectures, this method models the transformation from FTIR images to H&E -stained images as 
+
+a stochastic B rownian bridge process and directly learns the cross -domain translation in pixel space 
+
+by means of a large -patch Transformer. When applied to FTIR images of un labeled human lung 
+
+tissue samples, the proposed method successfully transforms them into high -res olution H&E -
+
+stained images, achieving a 4× pixel -level super -resolution. Additionally, by partitioning images 
+
+into large patches, our method achieves a fourfold improvement in inference speed compared with 
+
+traditional U-Net -based diffusion models, without compromising the quality of generated images .
+
+This super -resolution virtual staining method provides a rapid and effective solution for generating 
+
+high -resolution, clinically usable H&E -stained images from infrared spectroscopic images , which 
+
+can significantly facilitate the incorporation of FTIR microspectroscopy into clinical histological 
+
+scenarios. 
+
+Keywords: Virtual staining, Fourier transform infrared microspectroscopy , Diffusion transformers ,
+
+Brownian bridge process 
+
+# Introduction 
+
+Nowadays, histological staining has become a cornerstone technique in biomedical research 
+
+and clinical pathology, enabling the vis ualization of tissue architecture and cellular morphology 
+
+through selective interaction of dyes with biological components 1–3. As the most widely used 
+
+staining method in histology and pathology, hematoxylin and eosin (H&E) staining can clearly 
+
+differentiate between cellular components in tissues, making it the gold standard in the diagnosis of 
+
+various diseases , especially cancer 4. However, traditional H&E staining involves labor -intensive 
+
+and time -consuming tissue processing steps, typically requiring days to weeks from tissue collection 
+
+to microscopic examination, which c arries the risk of delaying disease diagnosis and treatment. 
+
+Moreover, the tissue damage introduced during the chemical staining procedures is irreversible, 
+
+prohibiting additional staining or further molecular analysis on the same section 5,6 . Therefore, 
+
+developing a rapid and label -free method that can generate high -quality pathological results would 
+
+be invaluable for clinical diagnostics. 
+
+Recently, Fourier transform infrared (FTIR) microspectroscopy has shown promising results for non -destructive and label -free pathological assessment of biological tissues 7,8 . By measuring 
+
+the mid -infrared light absorption of samples, FTIR microspectroscopy can quantitatively detect 
+
+natural tissue biomarkers such as proteins, lipids, nucleic acids, etc., which are often correlated with 
+
+disease progression 9,10 . In recent decades, FTIR has been widely used to improve the diagnosis and 
+
+treatment of numerous diseases, such as lung cancer 11 , liver cancer 12 , acute pyelonephritis 8, gastric 
+
+cancer 13 , and so on 14 –18 . However, images obtained from FTIR modalities often exhibit lower 
+
+spatial resolution due to wavelength limitations, and have fundamentally different contrast 
+
+mechanisms compared to conventional H&E -stained images. As a result, their visual appearance is 
+
+unfamiliar to clinical pathologists, creating a significant barrier to clinical adoption 19 . In routine 
+
+diagnostic workflows, H&E -stained images are still required as a reference for interpretation, yet 
+
+obtaining them necessitates additional staining procedures and involves complex registration 
+
+processes to ensure accurate spatial alignment , which are technically challenging and error -prone. 
+
+These practical constrai nts highlight the need for an efficient approach to bridge the gap between 
+
+FTIR imaging and conventional histopathology, thereby simplifying the diagnostic workflow and 
+
+advancing research in infrared pathology. 
+
+Over the last decade s, the rapid advancement s of deep learning (DL) -based approaches ha ve 
+
+revolutionized the medical image analysis 20,21 , demonstrating remarkable pe rformance in various 
+
+tasks including image super -resolution 22 –24 , pathological diagnosis 25,26 , semantic segmentation 27 –
+
+> 29
+
+, cross -modality transformation 30,31 , and virtual staining 32 –39 . In particular , DL -based virtual 
+
+staining (VS) techniques can generate computationally stained results from various label -free 
+
+images (e.g., autofluorescence images 32,36,38 , quantitative phase microscopy images 40 , stimulated 
+
+Raman scattering images 33,41 , imaging mass spectrometry 42 , among others ), avoiding the complex 
+
+procedures required in conventional staining protocols and the tissue damage caused by chemical 
+
+dyes. Early studies on virtual staining primarily relied on convolutional neural networks (CNNs) o r
+
+generative adversarial networks (GANs) to learn a direct mapping between label -free modalities 
+
+and stained images. While these methods have demonstrated promising results, they often suffer 
+
+from inherent limitations, such as blurring of fine structural d etails, instability during training, and 
+
+limited generalization to unseen tissue types or imaging conditions 42 . More recently, diffusion 
+
+models 43,44 have emerged as a powerful alternative for image generation tasks, owing to their strong 
+
+generative capacity, stable optimization, and superior ability to model complex, multimodal data 
+
+distributions. By iteratively refining samples through a stochastic de noising process, diffusion 
+
+models have shown superior performance in preserving fine -grained image structures and color 
+
+consistency compared with CNN - and GAN -based counterparts. Building upon this framework, 
+
+Brownian Bridge Diffusion Models (BBDMs) 45 further tailor the diffusion process for image -to -
+
+image t ranslation tasks by explicitly constraining the stochastic trajectory between a source image 
+
+and a target domain, leading to improved conditional controllability and faster convergence. BBDM 
+
+has been reported to outperform traditional cGAN architecture in various virtual staining 
+
+applications 32,42 . Nevertheless, most existing diffusion -based virtual staining methods are 
+
+implemented with U -Net –style backbo nes, which may limit the model’s capacity and efficiency in 
+
+capturing global, long -range dependencies in images, particularly when handling high -resolution 
+
+data or when an understanding of complex structural contexts is required. To address this issue ,
+
+Dif fusion Transformers (DiTs) 46 have been proposed by introducing vision Transformer (ViT) 
+
+architectures into diffusion models, leveraging self -attention mechanisms to explicitly model global 
+
+context and long -range interactions across the image . While DiT models demonstrate superior 
+
+capability in capturing high -level semantic consistency, pure Transformer -based designs typically 
+
+require a relatively small patch size input to generate high -fidelity images with fine -grained 
+
+structures, which dramatically increases the token length and results in prohibitive computational 
+
+and memory costs when appl ied directly in pixel space . Consequently, some studies have explored 
+
+hybrid architectures that combine Transformers and CNNs to integrate global context modeling with 
+
+robust local feature representations, enabling diffusion models to achieve both semantic consistency 
+
+and pixel -level accuracy 47,48 . This paradigm provides an effective and flexible framework for high -
+
+quality image generati on and translation in complex visual domains. More importantly, a recent 
+
+study has demonstrated that 49 , by predicting clean images rather than noise, a pure vision 
+
+Transformer operating on large image patch es can also effectively perform diffusion modeling 
+
+directly in pixel space , thereby substantially reducing the computational resources required for 
+
+running the DiT model and improving inference speed. 
+
+In this work , by integrating the Brownian bridge proces s into the diffusion Transformer model, we present ed a diffusion transformer -based pixel super -resolution virtual staining (DiT -SRVS) 
+
+model that transforms FTIR microspectroscopic images of unstained tissue samples into H&E -
+
+stained higher -resolution images without the need for traditional chemical staining process. Fig. 1 
+
+shows the workflow for the DiT -SRVS model , in which a hybrid CNN –Transformer architecture is 
+
+adopted . The overall model consists of three components : (1) a super -resolution head er , (2) a pixel 
+
+diffusion transformer backbone, and (3) a detail refiner . The super -resolution head is a lightweight 
+
+convolutional neural network incorporating a pixel -shuffle layer, which upsamples the input low -
+
+resolution spectroscop ic images and reduces their channel dimensionality to match that of the H&E -
+
+stained bright -field images. The pixel diffusion Transformer, built upon a Brownian bridge process, 
+
+further integrates the low -resolution conditional input with noise estimation to reconstruct high -
+
+resolution chemically stained images of unlabeled tissue samples. Finally, a detail refiner composed 
+
+of a lightweight U -Net network is employed to further enhance the fine -grained local details of the 
+
+images reconstructed by the DiT backb one . Experimental results on unlabeled human lung tissue 
+
+demonstrate that, compared with conventional cGAN -based virtual staining methods, our approach 
+
+produces virtual H&E -stained images with superior visual quality and more accurate color 
+
+distributions, achieving significant improvements in quantitative metrics. Moreover, the large -patch 
+
+Transformer substantially reduces the input sequence length and offers higher computational 
+
+efficiency and faster inference speed than sta ndard U -Net -based diffusion models, which can greatly 
+
+enhance the clinical throughput of this super -resolution virtual staining technique . In summary, our 
+
+DiT -SRVS approach provides a powerful and reliable tool for directly and rapidly generating high -
+
+resolution H&E -stained images of corresponding unstained tissues from their low -resolution FTIR 
+
+images, which can help to further accelerate the clinical translation of infrared metabolomics. We 
+
+believe that this technique will offer significant benefits for FTIR -based histopat hological research 
+
+and will facilitate the integration of FTIR microspectroscopic studies into clinical histological 
+
+practice. 
+
+Fig 1. Super -resolution virtual staining of unlabeled tissue sections using diffusion Transformer. (a) 
+
+Pipeline s of traditional hematoxylin and eosin (H&E) histochemical staining and diffusion 
+
+transformer -based super -resolution virtual tissue staining ; (b) Schematic illustration of the 
+
+workflow of the DiT -SRVS model, which directly learns the transformation between two image 
+
+domains via a Brownian bridge diff usion process. 2. Material s and methods 
+
+# 2.1 Sample preparation , histochemical H&E staining and 
+
+# FTIR image acquisition 
+
+Lung tissue samples for this research were sourced from formalin -fixed paraffin -embedded 
+
+(FFPE) tissue blocks acquired by  Shanghai Chest Hospital  with informed consent from all patients. 
+
+All the experiment procedures in this study we re approved by the Ethics Committee of the Shanghai 
+
+Chest Hospital [Ethics approval number: KS(Y)22139]. The study involved lung specimens from 6
+
+individual patients . For each patient , two c onsecutive tissue se ctions approximately 4 μm thick were 
+
+sliced from the FFPE tissue blocks. The first section was mounted on a calcium fluoride (CaF 2)
+
+slide for FTIR imaging. The second section was placed on a glass slide and stained with hematoxylin 
+
+and eosin (H&E) . Both sections were scanned with an OCUS d igital pathology scanner to acquire 
+
+the corresponding bright field image s with a spatial resolution of 0. 48 μm/pixel  (20× objective). 
+
+Prior to further processing, these bright -field images were downsampled to a resolution of 
+
+approximately 1. 25 μm/pixel. 
+
+The FTIR images of lung tissue sections were acquired using a Bruker Hyperion II IR 
+
+Microscope in the spectral range from 4000 to 900 cm -1 at a spectral resolution of 8 cm -1. Imaging 
+
+was performed using a 64*64 pixel f ocal -plane array detector with a spatial resolution of 5 μm/pixel 
+
+in transmission mode. Meanwhile, visible -light images of the FTIR imaging regions were captured 
+
+using the built -in 4x objective lens for subsequent image registration. 
+
+# 2.2 Data preparation and pre -processing 
+
+2.2.1 FTIR image pre -processing 
+
+The spectrum in each pixel of the FTIR spectral images was cut into the fingerprint region 50 ,
+
+spanning from 1800 cm⁻¹ to 1000 cm⁻¹, for subsequent analysis. After wavenumber cutting, the 
+
+spectrum of each pixel consists of 207 wavenumber channels. Th en the FTIR spectra were baseline -
+
+corrected using Rubber -band baseline correction  with 64 baseline points and band normalized to 
+
+Amide I (1650 cm -1) 51 . Principal component analysis (PCA) was employed for dimension reduction 
+
+to reduce the training time and memory consumption. And the first five principal components were 
+
+retained for subsequent model training and evaluation (detailed in the Results section) .
+
+2.2.2 Multimodal image registration 
+
+Due to the substantial differences in spatial resolution and imaging modality, as well as the 
+
+mismatch in the scan area during image acquisition, the H&E -stained image s cannot be directly 
+
+registered to the FTIR spectral image s. To address this challenge, we designed a multi -step 
+
+registration strategy that leverages the bright -field image of an unstained tissue section for assistance. 
+
+The workflow consists of the following five steps: (1) The whole -slide image (WSI) of the H&E -
+
+stained tissue and the corresponding whole -slide image of the unstained section are register ed using 
+
+the RegWSI tool 52 to achieve global alignment ; (2) The visible -light image obtained from the FTIR 
+
+scan area (as described in Section 2.1) is then used as the template. With the SIFT feature -matching 
+
+algorithm, we identify the corresponding scan region in the WSI of the unstained section. The 
+
+matched region is subsequently cropped from the registered H&E WSI to obtain a coarse H&E –
+
+FTIR paired image ; (3) The FTIR spectral image is processed by integrating the protein -related 
+
+amide I/II band (16 90 - 1490 cm⁻¹) to generate a corresponding grayscale image, which is then 
+
+upsampled by a factor of four using bilinear interpolation to match the spatial size of the H&E image. 
+
+The H&E image obtained in step (2) is further registered to this grayscale image ; (4) Both the H&E 
+
+image and the grayscale FTIR -derived image ar e divided into 512×512 patches (The raw FTIR 
+
+spectral image is similarly partitioned into 128×128 patches.) . For each paired image patch , the 
+
+H&E image patch was aligned to the corresponding FTIR grayscale image patch at the pixel level 
+
+using an iterative elastic pyramid cross -correlation registration method ; (5) For each registered H&E 
+
+patch ( or FTIR spectral patch) obtained in step (4), the central 256×256 (or 64×64) region is cropped 
+
+and used as the final paired dataset for model training and testing. 2.2.3 Dat aset preparation and division 
+
+The training and testing dataset comprised paired FTIR spectral images and their 
+
+corresponding bright -field histochemically stained H&E images obtained in section 2.2.2 . In this 
+
+work, we collected a total of 1312 paired FTIR -H&E microscopic image patches (each with 
+
+256 ×256 pixels) patches from six patients. Among them, 1, 168 pairs from five patients were used 
+
+for model training, while the remaining 144 pairs from the last patient were reserved for blind testing. 
+
+And the paired image FOV s were further randomly cropped to a size of 192×192 pixels during each 
+
+training epoch . In addition , image pairs that were blurred or exhibited severe misalignment were 
+
+manually excluded fro m the dataset to during the training and quantitative evaluation stages .
+
+# 2.3 Brownian bridge diffusion process and Network 
+
+# architecture 
+
+As illustrated in Fig. 2 , the super -resolution virtual staining framework consists of two 
+
+networks: a super -resolution head er and a pixel diffusion transformer. The super -resolution header 
+
+is a lightweight convolutional neural network (CNN) composed of two convolutional layers and a 
+
+pixel -shuffle layer (as depicted in Fig. 2b) , which is responsible for tra nsforming the low -resolution 
+
+FTIR images of unlabeled tissue 𝑦 0 ∈ 𝑅 𝐻   
+
+> 𝑁 ×𝑊
+> 𝑁 ×5
+
+(where N is the pixel super -resolution factor and 
+
+we set N=4 in this work ) to the same dimensionality as the H&E images 𝑥 0 ∈ 𝑅 𝐻 ×𝑊 ×3, thereby 
+
+satisfying the requirements of the subsequent diffusion sampling process :
+
+𝑦 = 𝑓 𝑐 (𝑦 0) (1)
+
+where 𝑦 ∈ 𝑅 𝐻 ×𝑊 ×3 is the output of super -resolution header and has a dimension matched 
+
+with the ground truth image x0.
+
+During the forward diffusion process of Brownian Bridge , the upsampled FTIR image y and 
+
+the corresponding H &E -stained image 𝑥 0 were used as the initial state and destination state ,
+
+respectively , and the intermediate state 𝑥 𝑡 can be directly computed as follows: 
+
+𝑥 𝑡 = (1 − 𝑚 𝑡 )𝑥 0 + 𝑚 𝑡 𝑦 + √𝛿 𝑡 𝜖 𝑡 , 𝜖 𝑡 ~𝑁 (0, 𝐼 ) (2)
+
+𝑚 𝑡 = 𝑡 
+
+𝑇 , 𝛿 𝑡 = 2𝑚 𝑡 (1 − 𝑚 𝑡 ) (3)
+
+where T is the total steps of the diffusion process , and t is the intermediate time step. In this work, 
+
+T was set to 1000 during both the forward and reverse processes .
+
+Subse que ntly , the super -resolution header output y is concatenated with the noisy image 𝑥 𝑡 
+
+and fed into a denoising network 𝑥 𝜃 , which is trained to estimate 𝑥 0 from the given 𝑥 𝑡 and t. This 
+
+denoising network is designed based on a Vision Transformer (ViT) architectu re which operat es on 
+
+large image patches consisting of raw pixels . Fig . 2c illustrates the architecture of the pixel dif fusion 
+
+Transformer model , which is consisted of a p atchify layer, serval transformer blocks , and a linear 
+
+decoder layer. The input concatenated image 𝑥 𝑖𝑛 ∈ 𝑅 𝐻 ×𝑊 ×𝐶 is first reshaped into a sequence of 
+
+flattened 2D patches 𝑥 𝑝 ∈ 𝑅 𝑁 ×(𝑃 2×𝐶 ), where (H, W) is the resolution of the original image, C is the 
+
+number of input channels, P is the resolution of each image patch, and 𝑁 = 𝐻 × 𝑊 𝑃 2⁄ is the 
+
+resulting number of patches . In our model, the patch size is set to P = 16 and the image resolution 
+
+is 192 ×192 . With an input ch annel number of C = 6, the patchification process yields a total of N =
+
+(192 × 192 )/16 2 = 144 image patche s. Then aft er the linear embedding, each patch is 
+
+transformed into a token of dimension d, which is then processed by a series of transformer blocks. 
+
+Fig. 2c illustrates the detailed design of the transformer block , which consists of a multi -head self -
+
+attent ion layer and an MLP block. The MLP comprises two layers with GELU nonlinear activation 
+
+functions. Layer normalization (LN) is applied to the image tokens before they are fed into each 
+
+block. The noise timestep t is embedded into each transformer block through the adaptive layer 
+
+norm (adaLN) . However, a purely Transformer -based architecture may lead to the loss of fine -
+
+grained details in the output images, particularly when large patch sizes are used. Therefore, we 
+
+append a co -trained lightweight U -Net network after the Transformer to recover the fine -grained 
+
+details of the reconstructed images , as shown in Fig. 2d.
+
+Since we directly predict the clean virtual staining image rather than the noise, the loss function 
+
+of denoising network 𝑥 𝜃 is defined as: 
+
+𝐿 = ∑ 𝐸 (𝑥 0,𝑦 ),𝜖 𝑡 ||𝑥 𝜃 (𝑥 𝑡 , 𝑡 ) − 𝑥 0||2
+
+> 𝑡
+
+(4)In the inference stage, the reverse Brownian Bridge process directly starts from the conditional 
+
+label -free input by setting 𝑥 𝑇 = 𝑦 = 𝑓 𝑐 (𝑦 0) and aims to predict 𝑥 𝑡 −1 from 𝑥 𝑡 :
+
+𝑝 𝜃 (𝑥 𝑡 −1|𝑥 𝑡 , 𝑥 0, 𝑦 ) = 𝑁 (𝑥 𝑡 −1; 𝜇 𝜃 (𝑥 𝑡 , 𝑥 0, 𝑡 ), 𝛿 
+
+> ~
+> 𝑡
+
+𝐼 ) (5)
+
+where the estimated mean value term (learned by the denoising network ) is: 
+
+𝜇 𝜃 (𝑥 𝑡 , 𝑥 0, 𝑡 ) = 𝑎 𝑡 𝑥 𝜃 + 𝑏 𝑡 𝑥 𝑡 + 𝑐 𝑡 𝑦 (6)
+
+and the additional variance added during the sampling process is: 
+
+𝛿  
+
+> ~
+> 𝑡
+
+= 𝛿 𝑡 |𝑡 −1 ∙ 𝛿 𝑡 −1
+
+𝛿 𝑡 
+
+(7)
+
+The expressions of coefficient 𝑎 𝑡 , 𝑏 𝑡 , 𝑐 𝑡 , and 𝛿 𝑡 |𝑡 −1 an be formulated as :
+
+𝑎 𝑡 = (1 − 𝑚 𝑡 −1
+
+𝛿 𝑡 |𝑡 −1
+
+𝛿 𝑡 
+
+) (8)
+
+𝑏 𝑡 = 𝛿 𝑡 −1
+
+𝛿 𝑡 
+
+1 − 𝑚 𝑡 
+
+1 − 𝑚 𝑡 −1
+
+(9)
+
+𝑐 𝑡 = (𝑚 𝑡 −1 − 𝑚 𝑡 
+
+1 − 𝑚 𝑡 
+
+1 − 𝑚 𝑡 −1
+
+𝛿 𝑡 −1
+
+𝛿 𝑡 
+
+) (10 )
+
+𝛿 𝑡 |𝑡 −1 = 𝛿 𝑡 − 𝛿 𝑡 −1
+
+(1 − 𝑎 𝑡 )2
+
+(1 − 𝑎 𝑡 −1)2 (11 )
+
+Starting from 𝑥 𝑇 , the above steps are repeated to successively estimate 𝑥 𝑇 −1, 𝑥 𝑇 −2, and so 
+
+on, until the final clean virtual staining image 𝑥 0 is obtained. This process can be defined as the 
+
+following Markov chain: 
+
+𝑝 𝜃 (𝑥 0:𝑇 ) = 𝑝 (𝑥 𝑇 ) ∏ 𝑝 𝜃 (𝑥 𝑡 −1|𝑥 𝑡 , 𝑥 0, 𝑦 )
+
+> 𝑇
+> 𝑡 =1
+
+(12 )
+
+where e ach transition probability 𝑝 𝜃 (𝐱 𝑡 −1|𝐱 𝑡 , 𝑥 0, 𝑦 ) estimates the intermediate state 𝐱 𝑡 −1 from 
+
+the previous state 𝐱 𝑡 and can be formulated as :
+
+𝑥 𝑡 −1 = 𝑎 𝑡 𝑥 𝜃 + 𝑏 𝑡 𝑥 𝑡 + 𝑐 𝑡 𝑦 + √𝛿 
+
+> ~
+> 𝑡
+
+𝜖 , 𝜖 ~𝑁 (0, 𝐼 ) (13 )
+
+Furthermore, to ensure structural consistency and stability of the model outputs, we adopt a 
+
+mean sampling strategy during inference . Specifically, when the sampling timestep 𝑡 > 𝑡 𝑒 , the 
+
+sampling process follows Eq. (1 2). Once the sampling reaches 𝑡 ≤ 𝑡 𝑒 , the estimation of 𝑥 𝑡 −1
+
+depends solely on 𝑥 𝑡 without injecting additional stochastic noise. In this regime, the sampling 
+
+process can be expressed as follows: 
+
+𝑥 𝑡 −1 = 𝑎 𝑡 𝑥 𝜃 + 𝑏 𝑡 𝑥 𝑡 + 𝑐 𝑡 𝑦 (14 )
+
+During the training procedure , both the super -resolution head er and the pixel diffusion 
+
+transformer were tr ained jointly using a AdamW optimizer with an initial learning rate of 110 -4.
+
+The batch size was set at 4 during the training process to balance training speed and GPU memory 
+
+consumption, and the model required approximately 20 hours to reach convergence. Additionally, 
+
+during the testing phase, the starting point 𝑡 𝑒 for mean sampling was set to 10. All network training 
+
+and testing were performed on a desktop computer with an Intel Xeon W -2235 central processing 
+
+unit (CPU), 64 GB of random -access memory (RAM), and a Nvidia GeForce GTX 3090 graphics 
+
+processing unit (GPU). The code for model training was implemented using Python version 3. 12.4 
+
+and Pytorch version 2. 1.0. Fig. 2. The network architecture for the DiT -SRVS model. (a) The pipeline of the Diffusion 
+
+Transformer -based super -resolution virtual staining process ; (b) -(d) T he detailed architecture of the 
+
+(b) super -resolution header used for dimension reduction and image upsampling, (c) denoising 
+
+Transformer backbone, and (d) detail refiner used for detail r econstruction .
+
+# 2.4 Baseline models using cGAN and U -Net based diffusion 
+
+# model 
+
+We compared our method with a conventional cGAN -based virtual staining approach and a 
+
+diffusion -based method employing a U -Net architecture. In the cGAN framework, the generator 
+
+adopts a five -layer U -Net structure, while the discriminator is implemented as a convolutional 
+
+neural networ k-based classifier. The generator is trained using a combination of adversarial loss and 
+
+pixel -wise structural loss terms, the latter including mean absolute error (MAE) and structural 
+
+similarity index measure (SSIM). The discriminator is optimized using a least -squares loss function. 
+
+The learning rate for the cGAN generator is set to 1 × 10 −4, whereas the learning rate for the cGAN 
+
+discriminator is set to 1 × 10 −5 . For the diffusion -based virtual staining method with a U -Net 
+
+backbone, the denoising network is implemented as an attention U -Net and is trained to estimate 
+
+image noise, following Refs. 32,42 . T he learning rate for training the diffusion model is s et to 
+
+1 × 10 −4. The Adam W optimizer was employed for network training, and the batch size was set as 
+
+4 for all the model training. 
+
+# 2.5 Evaluation metrics 
+
+To further quantitatively evaluate the performance of H&E virtual staining, we assessed the 
+
+similarity between the virtually stained images and the corresponding ground -truth H&E -stained 
+
+images using fiv e widely adopted metrics: Peak Signal -to -Noise Ratio (PSNR), Structural Similarity 
+
+Index Measure (SSIM), Pearson Correlation Coefficient (PCC), Learned Perceptual Image Patch 
+
+Similarity (LPIPS ), and Fréchet Inception Distance (FID). The core idea of PSNR is to measure 
+
+distortion by computing the mean squared error (MSE) between the generated image and the 
+
+ground -truth image, and then quantitatively evaluating it through the ratio of the maximum signal 
+
+power to the noise power. For a histochemically H&E -stain ed image X and the corresponding 
+
+virtually stained image Y of size H×W , the MSE is computed as follows: 
+
+𝑀𝑆𝐸 = 1
+
+𝐻𝑊 ∑ ∑ [𝑋 (𝑖 , 𝑗 ) − 𝑌 (𝑖 , 𝑗 )]2
+
+> 𝑊 −1
+> 𝑗 =0
+> 𝐻 −1
+> 𝑖 =0
+
+(15 )and PSNR can be denoted as :
+
+𝑃𝑆𝑁𝑅 = 20 ⋅ 𝑙𝑜𝑔 10 (𝑀𝐴 𝑋 𝑋 
+
+√𝑀𝑆𝐸 ) (16 )
+
+where 𝑀𝐴 𝑋 𝑋 represents the maximum pixel value of the ground truth H&E -stained image. 
+
+The SSIM was used to evaluate the perceptual and structural similarity between the virtual and 
+
+real H&E images. Unlike PSNR, SSIM considers luminance, contrast, and structural information 
+
+simultaneously, making it more consistent with hu man visual perception. The SSIM is defined as: 
+
+𝑆𝑆𝐼𝑀 (𝑋 , 𝑌 ) = (2𝜇 𝑥 𝜇 𝑦 + 𝐶 1)(2𝜎 𝑥𝑦 + 𝐶 2)
+
+(𝜇 𝑥  
+
+> 2
+
++ 𝜇 𝑦  
+
+> 2
+
++ 𝐶 1)(𝜎 𝑥  
+
+> 2
+
++ 𝜎 𝑦  
+
+> 2
+
++ 𝐶 2) (17 )
+
+where 𝜇 𝑥 and 𝜇 𝑦 are the mean values of image X and Y. 𝜎 𝑥 and 𝜎 𝑦 are the standard deviations 
+
+of X and Y. 𝜎 𝑥𝑦 is the cross -covariance of X and Y. 𝐶 1 and 𝐶 2 are constants introduced to prevent 
+
+the denominator from being zero. 
+
+The PCC was used to quantitatively measure the linear correlation between corresponding 
+
+pixel intensities of two images. Its value ranges from −1 to 1, where values closer to 1 indicate a 
+
+strong positive correlation. The PCC is calculated as 
+
+𝑃𝐶𝐶 (𝑋 , 𝑌 ) = ∑ ∑ (𝑋 (𝑖 , 𝑗 ) − 𝜇 𝑥 )(𝑌 (𝑖 , 𝑗 ) − 𝜇 𝑦 )𝑊 −1
+
+> 𝑗 =0
+> 𝐻 −1
+> 𝑖 =0
+
+√∑ ∑ (𝑋 (𝑖 , 𝑗 ) − 𝜇 𝑥 )2𝑊 −1 
+
+> 𝑗 =0
+> 𝐻 −1
+> 𝑖 =0
+
+√∑ ∑ (𝑌 (𝑖 , 𝑗 ) − 𝜇 𝑦 )2𝑊 −1
+
+> 𝑗 =0
+> 𝐻 −1
+> 𝑖 =0
+
+(18 )
+
+LPIPS is a perceptual similarity metric based on deep neural network features extracted from 
+
+pretrained AlexNet model. Instead of comparing raw pixel values, LPIPS computes the distance 
+
+between feature representations of two images at multiple semantic levels. A lower LPIPS score 
+
+corresponds to higher perceptual similarity. The LPIPS score can be expressed as 
+
+𝐿𝑃𝐼𝑃𝑆 (𝑋 , 𝑌 ) = ∑ 1
+
+𝐻 𝑙 𝑊 𝑙 𝑙 
+
+∑ ‖𝑤 𝑙 ⊙ (𝑓 𝑙 (𝑋 )ℎ,𝑤 − 𝑓 𝑙 (𝑌 )ℎ,𝑤 )‖2
+
+> 2
+> ℎ,𝑤
+
+(19 )
+
+Where 𝑓 𝑙 (∙) denotes the feature map at layer l, 𝐻 𝑙 and 𝑊 𝑙 are its spatial dimensions, and 𝑤 𝑙 
+
+represents the learned channel -wise weights. 
+
+FID is a metric used to measure the similarity between generated images and real images 53 . It 
+
+evaluates image quality and diversity by comparing the distributional differences between generated 
+
+and real images in a feature space. A lower FID score indicates that the distribution of generated 
+
+images is closer to that of real im ages, implying that the generated images more closely resemble 
+
+real images in terms of both visual quality and diversity. The FID was calculated as follows: 
+
+𝐹𝐼𝐷 = ‖𝜇 𝑥 − 𝜇 𝑦 ‖2 + 𝑇𝑟 (𝛴 𝑥 + 𝛴 𝑦 − 2(𝛴 𝑥 𝛴 𝑦 )1/2) (20 )
+
+where 𝑁 (𝜇 𝑥 , 𝛴 𝑥 ) is the multivariate normal distribution estimated from Inception v3 features 
+
+calculated on real histochemically H&E -stained images and 𝑁 (𝜇 𝑦 , 𝛴 𝑦 ) is the multivariate normal 
+
+distribution estimated from Inception v3 features calculated on generated virtually stained images. 
+
+Tr (… ) denotes the trace of a matrix. 
+
+# 3. Results 
+
+# 3.1 Principal Component Analysis of FTIR Spectra 
+
+The original FTIR spectral images contain 207 spectral channels , and directly using the raw 
+
+FTIR data for virtual staining would result in substantial computationa l overhead. To mitigate this 
+
+issue, principal component analysis (PCA) was employed for dimension reduction , to reduce the 
+
+computational cost required for training the virtual staining models . Fig . 3 presents the scree plots 
+
+obtained from the principal com ponent analysis of the FTIR spectral images collected from six 
+
+patients, together with the score maps of the first three principal components. The scree plot s display 
+
+the percentage of variance explained by each principal component, enabling an assessment of their 
+
+relative importance. As shown in the scree plot s, the first five principal components account for the 
+
+majority of the variance in the FTIR data, wher eas the variance explained by subsequent 
+
+components gradually decreases and eventually plateaus, indicating that these later components 
+
+have limited explanatory power and may contain little useful information. Consequently, we 
+
+ultimately selected the first five principal components as the training and testing data for the virtual 
+
+staining model s.Fig. 3. Principal component analysis results of FTIR spectral images from six patients. The score 
+
+maps are on the left, where each pixel value represents the pro jection value of the corresponding 
+
+spectrum on to that principal component. The scree plots on the right show the percentage of variance 
+
+explained by each principal component. 
+
+# 3.2 Virtual histological staining results of FTIR images of 
+
+# label -free human lung tissues using diffusion Transformer 
+
+After the training phase, we evaluated the performance of our DiT -SRVS model on the 
+
+validation data set mentioned in section 2. 2.3 and compared it with that of the cGAN model and the 
+
+diffusion U-Net model , as shown in Fig. 4. Fig . 4a-c provides an overview of the FTIR integrated 
+
+images of the test samples (integrated over the 1660 cm -¹  20 cm -1 band), the corresponding virtual 
+
+staining results of DiT -SRVS model, and the bright -field microscopic images of the chemically H&E -stained sections, respectively. Fig . 4d-f shows representative outputs of each of the models .
+
+Due to the loss of spatial resolution in FTIR images of unlabeled tissue samples, cGAN -based 
+
+models are generally unable to accurately reconstr uct the stained tissue and cellular structures. In 
+
+contrast, diffusion -based SRVS models effectively recover these features, which agree well with the 
+
+corresponding target images. Additionally, we analyzed the color distribution of the virtually stained 
+
+im ages generated by each model and compared them with those of the ground -truth H&E -stained 
+
+images. Fig . 5a presents histograms of color distributions in the YCbCr color space for all test image 
+
+patches . It can be observed that, among all models, the DiT -SRVS model produces results whose 
+
+color distributions are closest to the ground truth and exhibit a higher degree of consistency with 
+
+the histochemically stained target images, demonstrating the superiori ty of the proposed DiT -SRVS 
+
+approach. 
+
+Fig. 5b-e and Table 1 present the quantitative metrics for each of the models. Th e comparative 
+
+analysis demonstrate d that diffusion -based virtual staining methods outperform the conventional 
+
+cGAN model across all evalu ated metrics. Moreover, although our DiT -SRVS model achieves 
+
+slightly lower PSNR, PCC, and LPIPS values than the diffusion U -Net, it is nearly four times faster 
+
+than the U -Net model in single -image inference test , which can be attributed to its distinctive large -
+
+patch input strategy. In addition, we employed paired two -sided t-tests to assess whether statistically 
+
+significant differences in virtual staining performance exist among the three models. The p-values 
+
+shown in Fig . 5b-e highlight ed that diffusion -based virtual staining models exhibit statistically 
+
+significant performance improvements over the traditional cGAN -based approach (p-value < 0.05) ;
+
+in contrast, the diffusion U -Net and our DiT -SRVS model demonstrate comparable virtual staining 
+
+image quality, with no statistically significant differences between them (p-value > 0.05) .
+
+Fig. 4 . Visual comparison of super -resolution virtual staining performances of different VS models .
+
+(a) FTIR image of the test sample, visualized by integrating over th e 1660 cm -¹  20 cm -1 spectral 
+
+band; (b) Super -resolution virtual staining results of the same FTIR data in (a), which are digitally generated by our DiT -SRVS model ; (c) Histochemical H&E staining results of the tissue section 
+
+adjacent to (a); (d) -(f) Zoomed -in images of the three exemplary local regions indicated in (a), along 
+
+with the corresponding super -resolved virtual staining results generated by different models. 
+
+Fig. 5. Quantitative comparison results of super -resolution virtual staining performances of different 
+
+VS models . (a) -(c) T he color histogram comparisons of virtually stained images and their H&E -
+
+stained counterparts in (a) Y, (b) Cr , and (c) Cb channels ; (d) -(g) The scatter plots presen t the (d) 
+
+PSNR, (e) SSIM, (f) PCC, and (g) LPIPS metrics calculated for images generated by different virtual 
+
+staining methods. 
+
+Table 1. Quantitative c omparison of different virtual stain methods .
+
+Metric  cGAN  Diffusion U -Net  Ours 
+
+PSNR  12.95 14.24  14.36 
+
+SSIM  0.358  0.587  0.534 
+
+PCC  0.04 1 0.309 0.292 
+
+LPIPS  0.40 4 0.33 7 0.3 26 
+
+FID score  173.66  62.98  59.53 
+
+Latency  0.29 s 346.98 s 89.41 s
+
+Params  55M  84 M 236M 
+
+# 3.3 Ablation analysis on the detail refiner 
+
+The Detail Refiner (DR) is a submodule composed of a lightweight U -Net that helps recover the fine details in the images generated by the vision Transformer, thereby further enhancing the 
+
+quality of virtual staining. To further shed light on this , we analyzed the staining performance of the 
+
+DiT -SRVS model with and without the DR module on the test dataset, and the comparative results 
+
+are presented in Fig . 6 and Table 2. Although the DR module accounts for less than 2% of the total 
+
+model parameters, incorporating it into the DiT -SRVS model leads to improvements across all 
+
+image evaluation metrics compared with the model without the DR module, including a 30% 
+
+impro vement in the FID score. Moreover, the results of the two -sided t-tests indicate that the model 
+
+with the DR module achieves statisticall y significant performance gains over its counterpart without 
+
+the module in terms of SSIM and LPIPS metrics (p-value < 0.05) . These results confirm that the 
+
+DR module enables a statistically significant improvement in the virtual staining fidelity of the Di T-
+
+SRVS model, highlighting its strong practical utility for virtual staining applications in unlabeled 
+
+tissue imaging. 
+
+Fig. 6. Comparison of VS performance for DiT -SRVS model s with and without the DR module. (a) Visual comparisons of virtually stained images generated from DiT -SRVS models with and without 
+
+the DR module; (b) -(e) Zoomed -in images of the four exemplary local regions indicated in (a) , along 
+
+with the corresponding ground truth ; (f)-(i) The scatter plots present the ( f) PSNR, ( g) SSIM, ( h)
+
+PCC, and ( i) LPIPS metrics calculated for images generated by DiT -SRVS models with and without 
+
+the DR module. 
+
+Table 2. Quantitative c omparison of DiT -SRVS model with or without DR module. 
+
+Metric  DiT -SRVS (with Detail Refiner)  DiT -SRVS (without Detail Refiner) 
+
+PSNR  14.36  14.2 1
+
+SSIM  0.534  0.506 
+
+PCC  0.292  0.2 81 
+
+LPIPS  0.326  0.35 2
+
+FID score  59.53  85.16 
+
+Latency  89.41 s 72.59 s
+
+Params  236M  232M 
+
+# 4. Conclusion 
+
+In this work, we propose d a diffusion Transformer –based super -resolution virtual staining 
+
+(DiT -SRVS) model for converting low -resolution FTIR spectral images of unstained tissue into 
+
+corresponding high -resolution H&E -stained images. The model adopts a Transformer backbone that 
+
+tak es large image patches as input and learns the domain translation directly in pixel space through 
+
+a Brownian bridge diffusion process. In addition, the overall framework incorporates a super -
+
+resolution head and a detail refiner: the former upsamples the in put FTIR images and performs 
+
+dimensional transformation to match the spatial resolution of the H&E -stained images, while the 
+
+latter further refines fine -grained details in the Transformer outputs, thereby enhancing the quality 
+
+of the generated virtual stai ning images. 
+
+By effectively combining the strengths of diffusion models and large -patch Transformers, our 
+
+method demonstrates strong performance on experiments conducted with label -free human lung 
+
+tissue. Both qualitative visual inspection and quantitative evaluation show that the proposed DiT -
+
+SRVS model significantly outperforms conventional cGAN -based methods and achieves 
+
+performance comparable to current state -of -the -art approaches. Moreover, the use of large -patch 
+
+inputs substantially reduces computatio nal overhead and inference latency; in single -image 
+
+inference tests, DiT -SRVS is approximately four times faster than traditional diffusion models based 
+
+on U -Net architectures. 
+
+Ov erall, our approach provides a reliable and efficient framework for rapidly g enerating 
+
+directly corresponding H&E -stained images from FTIR data, thereby eliminating the need for 
+
+subsequent complex histochemical staining and image registration procedures and greatly 
+
+accelerating the turnaround of clinical infrared metabolomics studi es. In the future, we will further 
+
+enhance the staining performance and generalization capability of DiT -SRVS by training and 
+
+evaluating the model on broader and more diverse dataset s.
+
+Acknowledgements 
+
+This research was sponsored by the National Natural Science Foundation of China (62375170 and 
+
+62535019), the Shanghai Jiao Tong University (YG2024QNA51), and the Science and Technology 
+
+Commission of Shanghai Municipality (20DZ2220400). We thank Dr. Haitang Yang from Shanghai 
+
+Chest Hospital of Shangh ai Jiao Tong University for providing lung tissue samples .
+
+References 
+
+1.  Alturkistani, H. A., Tashkandi, F. M. & Mohammedsaleh, Z. M. Histological Stains: A 
+
+Literature Review and C ase Study. Glob J. Health Sci. 8, 72 –79 (2016). 
+
+2.  Bancroft, J. D., Gamble, M. & Suvarna, S. K. Theory and Practice of Histological Techniques .(Churchill Livingstone Elsevier, 2013). 
+
+3.  Musumeci, G. Past, present and future: overview on histology and histopathology. J. Histol. 
+
+Histopathol. 1, 5 (2014). 
+
+4.  Titford, M. The long history of hematoxylin. Biotech. Histochem. 80 , 73 –78 (2005). 
+
+5.  Bai, B. et al. Deep learning -enabled virtual hist ological staining of biological samples. Light 
+
+Sci. Appl. 12 , 57 (2023). 
+
+6.  Lin, W., Hu, Y., Zhu, R., Wang, B. & Wang, L. Virtual staining for pathology: Challenges, 
+
+limitations and perspectives. Intelligent Oncology 1, 105 –119 (2025). 
+
+7.  Wrobel, T. P. & B hargava, R. Infrared Spectroscopic Imaging Advances as an Analytical 
+
+Technology for Biomedical Sciences. Anal. Chem. 90 , 1444 –1463 (2018). 
+
+8.  Shao, J. et al. Label -free investigation of infected acute pyelonephritis tissue by FTIR 
+
+microspectroscopy with un supervised and supervised analytical methods. SPECTROCHIM 
+
+ACTA A 321 , 124753 (2024). 
+
+9.  Zhao, X. et al. GLASSR -Net: Glass Substrate Spectral Restoration Neural Network for Fourier 
+
+Transform Infrared Microspectroscopy in the Fingerprint Region. Anal. Chem. 97 , 5734 –5743 
+
+(2025). 
+
+10.  Berna, F. Fourier Transform Infrared Spectroscopy (FTIR). in Encyclopedia of Geoarchaeology 
+
+(ed. Gilbert, A. S.) 285 –286 (Springer Netherlands, Dordrecht, 2017). doi:10.1007/978 -1-4020 -
+
+4409 -0_15. 
+
+11.  Li, H. et al. Comparison of se rum from lung cancer patients and from patients with benign lung 
+
+nodule using FTIR spectroscopy. SPECTROCHIM ACTA A 306 , 123596 (2024). 
+
+12.  Yang, X., Ou, Q., Yang, W., Shi, Y. & Liu, G. Diagnosis of liver cancer by FTIR spectra of serum. SPECTROCHIM ACTA A 263 , 120181 (2021). 
+
+13.  Sheng, D. et al. Comparison of serum from gastric cancer patients and from healthy persons 
+
+using FTIR spectroscopy. SPECTROCHIM ACTA A 116 , 365 –369 (2013). 
+
+14.  Pacher, G. et al. Diagnosis of Cutaneous Leishmaniasis Using FTIR Spectroscopy and Machine 
+
+Learning: An Animal Model Study. ACS Infect. Dis. 10 , 467 –474 (2024). 
+
+15.  Coopman, R. et al. Glycation in human fingerna il clippings using ATR -FTIR spectrometry, a 
+
+new marker for the diagnosis and monitoring of diabetes mellitus. Clin. Biochem 50 , 62 –67 
+
+(2017). 
+
+16.  Zhou, X., Chen, C., Zuo, E., Chen, C. & Lv, X. Cross Branch Co -Attention Network 
+
+multimodal models based on Ra man and FTIR spectroscopy for diagnosis of multiple selected 
+
+cancers. Appl. Soft Comput. 166 , 112204 (2024). 
+
+17.  Zhou, X. et al. CMACF: Transformer -based cross -modal attention cross -fusion model for 
+
+systemic lupus erythematosus diagnosis combining Raman sp ectroscopy, FTIR spectroscopy, 
+
+and metabolomics. INFORM PROCESS MANAG 61 , 103804 (2024). 
+
+18.  Magalhães, S., Goodfellow, B. J. & Nunes, A. FTIR spectroscopy in biomedical research: how 
+
+to get the most out of its potential. Applied Spectroscopy Reviews 56 , 8 69 –907 (2021). 
+
+19.  Lotfollahi, M., Daeinejad, D., Berisha, S. & Mayerich, D. DIGITAL STAINING OF HIGH -
+
+RESOLUTION FTIR SPECTROSCOPIC IMAGES. in 2018 IEEE Global Conference on 
+
+Signal and Information Processing (GlobalSIP) 973 –977 (2018). 
+
+doi:10.1109/GlobalSI P.2018.8646696. 
+
+20.  Moen, E. et al. Deep learning for cellular image analysis. Nat Methods 16 , 1233 –1246 (2019). 
+
+21.  D A, A., Shekar, M. S., Bharadwaj, A., Vineeth, N. & Neelima, M. L. Deep Learning in Medical Image Analysis: A Survey. in 2024 Internationa l Conference on Innovation and Novelty in 
+
+Engineering and Technology (INNOVA) vol. I 1 –5 (2024). 
+
+22.  You, C. et al. CT Super -Resolution GAN Constrained by the Identical, Residual, and Cycle 
+
+Learning Ensemble (GAN -CIRCLE). IEEE TMI 39 , 188 –203 (2020). 
+
+23.  Zhang, H. et al. A novel GAN -based three -axis mutually supervised super -resolution 
+
+reconstruction method for rectal cancer MR image. COMPUT METH PROG BIO 257 , 108426 
+
+(2024). 
+
+24.  Wu, Z., Chen, X., Xie, S., Shen, J. & Zeng, Y. Super -resolution of brain MRI im ages based on 
+
+denoising diffusion probabilistic model. BIOMED SIGNAL PROCES 85 , 104901 (2023). 
+
+25.  Hollon, T. et al. Artificial -intelligence -based molecular classification of diffuse gliomas using 
+
+rapid, label -free optical imaging. Nat. Med. 29 , 828 –832 (2 023). 
+
+26.  Ren, J., Hacihaliloglu, I., Singer, E. A., Foran, D. J. & Qi, X. Adversarial Domain Adaptation 
+
+for  Classification of Prostate Histopathology Whole -Slide Images. in Medical Image 
+
+Computing and Computer Assisted Intervention – MICCAI 2018 (eds Fran gi, A. F., Schnabel, 
+
+J. A., Davatzikos, C., Alberola -López, C. & Fichtinger, G.) 201 –209 (Springer International 
+
+Publishing, Cham, 2018). doi:10.1007/978 -3-030 -00934 -2_23. 
+
+27.  Elazab, A. et al. GP -GAN: Brain tumor growth prediction using stacked 3D generat ive 
+
+adversarial networks from longitudinal MR Images. Neural Networks 132 , 321 –332 (2020). 
+
+28.  Jiang, J. et al. Tumor -Aware, Adversarial Domain Adaptation from CT to MRI for Lung Cancer 
+
+Segmentation. in Medical Image Computing and Computer Assisted Interve ntion – MICCAI 
+
+2018 (eds Frangi, A. F., Schnabel, J. A., Davatzikos, C., Alberola -López, C. & Fichtinger, G.) 
+
+777 –785 (Springer International Publishing, Cham, 2018). doi:10.1007/978 -3-030 -00934 -2_86. 29.  Qureshi, I. et al. Medical image segmentation using deep semantic -based methods: A review of 
+
+techniques, applications and emerging trends. Information Fusion 90 , 316 –352 (2023). 
+
+30.  Chen, X. et al. Artificial confocal microscopy for deep label -free imaging. Nat. Photon. 17 ,
+
+250 –258 (2023). 
+
+31.  Chen, J. et al. Medical image translation with deep learning: Advances, datasets and 
+
+perspectives. Med Image Anal 103 , 103605 (2025). 
+
+32.  Zhang, Y. et al. Pixel super -resolved virtual staining of label -free tissue using diffusion models. 
+
+Nat Commun 16 , 501 6 (2025). 
+
+33.  Liu, Z. et al. Virtual formalin -fixed and paraffin -embedded staining of fresh brain tissue via 
+
+stimulated Raman CycleGAN model. Sci. Adv. 10 , eadn3426 (2024). 
+
+34.  de Haan, K. et al. Deep learning -based transformation of H&E stained tissues in to special stains. 
+
+Nat. Commun. 12 , 4884 (2021). 
+
+35.  Park, E. et al. Unsupervised inter -domain transformation for virtually stained high -resolution 
+
+mid -infrared photoacoustic microscopy using explainable deep learning. Nat. Commun. 15 ,
+
+10892 (2024). 
+
+36.  Ri venson, Y. et al. Virtual histological staining of unlabelled tissue -autofluorescence images 
+
+via deep learning. Nat Biomed Eng 3, 466 –477 (2019). 
+
+37.  Yang, X. et al. Virtual Stain Transfer in Histology via Cascaded Deep Neural Networks. ACS 
+
+Photonics 9, 31 34 –3143 (2022). 
+
+38.  Li, Y. et al. Virtual histological staining of unlabeled autopsy tissue. Nat Commun 15 , (2024). 
+
+39.  Winetraub, Y. et al. Noninvasive virtual biopsy using micro -registered optical coherence 
+
+tomography (OCT) in human subjects. Sci. Adv. 10, eadi5794 (2024). 40.  Rivenson, Y. et al. PhaseStain: the digital staining of label -free quantitative phase microscopy 
+
+images using deep learning. Light Sci Appl 8, 23 (2019). 
+
+41.  Sarri, B. et al. Stimulated Raman histology: one to one comparison with st andard hematoxylin 
+
+and eosin staining. Biomed. Opt. Express 10 , 5378 –5384 (2019). 
+
+42.  Zhang, Y. et al. Virtual staining of label -free tissue in imaging mass spectrometry. Science 
+
+AdvAnceS (2025). 
+
+43.  Ho, J., Jain, A. & Abbeel, P. Denoising Diffusion Probab ilistic Models. Preprint at 
+
+https://doi.org/10.48550/arXiv.2006.11239 (2020). 
+
+44.  Luo, C. Understanding Diffusion Models: A Unified Perspective. Preprint at 
+
+https://doi.org/10.48550/arXiv.2208.11970 (2022). 
+
+45.  Li, B., Xue, K., Liu, B. & Lai, Y. -K. BBDM: I mage -to -image Translation with Brownian Bridge 
+
+Diffusion Models. Preprint at https://doi.org/10.48550/arXiv.2205.07680 (2023). 
+
+46.  Peebles, W. & Xie, S. Scalable Diffusion Models with Transformers. Preprint at 
+
+https://doi.org/10.48550/arXiv.2212.09748 (202 3). 
+
+47.  Liu, H. et al. ICTD: integrating CNN and transformer with diffusion models for robust image 
+
+deblurring and denoising. Vis Comput 41 , 11275 –11294 (2025). 
+
+48.  Chen, Z. et al. DiP: Taming Diffusion Models in Pixel Space. Preprint at 
+
+https://doi.org/10 .48550/arXiv.2511.18822 (2025). 
+
+49.  Li, T. & He, K. Back to Basics: Let Denoising Generative Models Denoise. Preprint at 
+
+https://doi.org/10.48550/arXiv.2511.13720 (2025). 
+
+50.  Pilling, M. & Gardner, P. Fundamental developments in infrared spectroscopic imag ing for 
+
+biomedical applications. Chem. Soc. Rev. 45 , 1935 –1957 (2016). 51.  Baker, M. J. et al. Using Fourier transform IR spectroscopy to analyze biological materials. Nat 
+
+Protoc 9, 1771 –1791 (2014). 
+
+52.  Wodzinski, M., Marini, N., Atzori, M. & Müller, H. R egWSI: Whole Slide Image Registration 
+
+using Combined Deep Feature - and Intensity -Based Methods: Winner of the ACROBAT 2023 
+
+Challenge. COMPUT METH PROG BIO 250 , 108187 (2024). 
+
+53.  Heusel, M., Ramsauer, H., Unterthiner, T., Nessler, B. & Hochreiter, S. GANs Trained by a 
+
+Two Time -Scale Update Rule Converge to a Local Nash Equilibrium. in Advances in Neural 
+
+Information Processing Systems vol. 30 (Curran Associates, Inc., 2017).

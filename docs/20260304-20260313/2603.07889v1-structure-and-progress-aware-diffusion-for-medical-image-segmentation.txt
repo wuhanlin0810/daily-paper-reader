@@ -1,0 +1,345 @@
+Title: Structure and Progress Aware Diffusion for Medical Image Segmentation
+
+URL Source: https://arxiv.org/pdf/2603.07889v1
+
+Published Time: Tue, 10 Mar 2026 01:38:55 GMT
+
+Number of Pages: 29
+
+Markdown Content:
+# Structure and Progress Aware Di ff usion for Medical Image Segmentation 
+
+Siyuan Song a,c,d,e , Guyue Hu a,c,d,e, ∗, Chenglong Li a,c,d,e, ∗, Dengdi Sun a,d,e , Zhe Jin a,d ,Jin Tang b,e 
+
+> a
+
+School of Artificial Intelligence, Anhui University, 230601, Hefei, China 
+
+> b
+
+School of Computer Science and Technology, Anhui University, 230601, Hefei, China 
+
+> c
+
+State Key Laboratory of Opto-Electronic Information Acquisition and Protection Technology, Anhui University, Hefei, 230601, China 
+
+> d
+
+Anhui Provincial Key Laboratory of Security Artificial Intelligence, Anhui University, Hefei, 230601, China 
+
+> e
+
+Anhui Provincial Key Laboratory of Multimodal Cognitive Computation, Anhui University, 230601, Hefei, China 
+
+Abstract 
+
+Medical image segmentation is crucial for computer-aided diagnosis, which neces-sitates understanding both coarse morphological and semantic structures, as well as carving fine boundaries. The morphological and semantic structures in medical im-ages are beneficial and stable clues for target understanding. While the fine bound-aries of medical targets (like tumors and lesions) are usually ambiguous and noisy since lesion overlap, annotation uncertainty, and so on, making it not reliable to serve as early supervision. However, existing methods simultaneously learn coarse struc-tures and fine boundaries throughout the training process. In this paper, we propose a structure and progress-aware di ff usion (SPAD) for medical image segmentation, which consists of a semantic-concentrated di ff usion (ScD) and a boundary-centralized di ff u-sion (BcD) modulated by a progress-aware scheduler (PaS). Specifically, the semantic-concentrated di ff usion introduces anchor-preserved target perturbation, which perturbs pixels within a medical target but preserves unaltered areas as semantic anchors, en-couraging the model to infer noisy target areas from the surrounding semantic con-text. The boundary-centralized di ff usion introduces progress-aware boundary noise, which blurs unreliable and ambiguous boundaries, thus compelling the model to fo-
+
+> ∗
+
+Corresponding authors: guyue.hu@ahu.edu.cn, lcl1314@foxmail.com 
+
+> arXiv:2603.07889v1 [cs.CV] 9 Mar 2026
+
+cus on coarse but stable anatomical morphology and global semantics. Furthermore, the progress-aware scheduler gradually modulates noise intensity of the ScD and BcD forming a coarse-to-fine di ff usion paradigm, which encourage focusing on coarse mor-phological and semantic structures during early target understanding stages and gradu-ally shifting to fine target boundaries during later contour adjusting stages. Eventually, the proposed SPAD achieves state-of-the-art performance on two medical segmenta-tion benchmarks (AMD-SD and CXRS datasets), demonstrating the e ff ectiveness and superiority of our approach. 
+
+Keywords: Medical image segmentation, di ff usion model, structure-aware, progress-aware 
+
+1. Introduction 
+
+Medical image segmentation is a fundamental task in computer-aided diagnosis, playing a vital role in various clinical applications[1], such as epicardial fat segmen-tation [2] and brain tumor delineation [3]. Medical segmentation not only facilitates more precise diagnoses but also alleviates the workload of healthcare professionals. In recent years, deep learning has greatly advanced this field, with U-Net [4] and its variants [5, 6] becoming the cornerstone network architectures for many segmentation tasks.[7, 8] After that, transformer-based models [9, 10] and large medical foundation models [11, 12, 13] have further boosted the segmentation performance across various medical modalities. Along with these huge advancements in network architectures [4, 5], perceiving and utilizing the intrinsic structural information in medical images has also attracted increasing attention [14, 15]. In detail, the structural information in medical images can be broadly categorized into morphological structure and semantic structure. The mor-phological structure of medical organs or lesions (such as shapes and sizes) provides essential clues for characterizing the targets and distinguishing them from surround-ing tissues. Meanwhile, the semantic structure of medical organs or lesions (such as semantic classes, spatial layouts, and relative positions to neighboring anatomical or-gans) also o ff ers abundant contextual guidance. For example, as in Fig. 1(a), certain 2(b) Ambiguous Medical Boundaries  
+
+> (a) Stable Morphological and Semantic Structures
+> (d) Coarse -to -fine Paradigm (Ours) (c) Conventional Paradigm
+> Fine
+> Boundary
+> Coarse
+> Structure
+> Supervised
+> Learning
+> Progress Progress
+> Fine
+> Boundary
+> Coarse
+> Structure
+> Supervised
+> Learning
+> Fine
+> Boundary
+> Coarse
+> Structure
+> Supervised
+> Learning
+> Fine
+> Boundary
+> Coarse
+> Structure
+> Supervised
+> Learning
+> Fine
+> Boundary
+> Coarse
+> Structure
+> Supervised
+> Learning
+> Fine
+> Boundary
+> Coarse
+> Structure
+> Supervised
+> Learning
+
+Figure 1: (a) Beneficial and stable morphological and semantic structures. (b) Ambiguous and unreliable medical boundaries. (c) Conventional training paradigm simultaneously learns coarse structures and fine boundaries throughout the whole training process. (d) The proposed coarse-to-fine paradigm prioritizes ac-quiring coarse and stable structures and gradually shifts to carving fine and unreliable boundaries in medical images. 
+
+categories of lesions usually appear in characteristic regions and morphology, and also maintain stable positional dependencies with adjacent tissues, which contain abundant morphological and semantic structures that are beneficial for medical segmentation. Some pioneer methods have attempted to exploit this structural information in medi-cal images to enhance structural awareness during segmentation. On one hand, some approaches explicitly incorporate structural priors or encode spatial relationships to strengthen the understanding of global context and inter-class consistency in segmen-tation models [16, 17, 15, 18]. On the other hand, some methods also implicitly capture structural dependencies via architectural innovations or attention mechanisms to better recognize spatial patterns and contextual relations [14]. Together, these structure-aware strategies highlight the benefits of leveraging morphological and semantic structures for precise medical image segmentation. Medical image segmentation requires not only understanding coarse morphologi-cal and semantic structures but also carving fine boundaries. Unlike the morphological and semantic structures that are always beneficial and stable for target understand-ing , the fine boundaries of medical targets (such as tumors and lesions) are usually 
+
+3ambiguous and noisy . As illustrated in Fig. 1(b), the fine boundaries of tumors and lesions are frequently blurred and ambiguous for various reasons, such as lesion over-lap [19], annotation uncertainty [20], low contrast [21], etc. Due to boundary ambigu-ity, the fine boundary information of medical targets is noisy and not always reliable as trustworthy supervision, particularly in the early target understanding stage. However, existing methods [22, 5] that simultaneously learn coarse structures and fine bound-aries throughout the whole training process (as shown in Fig. 1(c)) may be sub-optimal under such boundary uncertainty. Therefore, a more reasonable learning paradigm to coordinate coarse structures and fine boundaries should prioritize the acquisition of coarse and stable structures during early target understanding stages, and gradually shift to fine and unreliable boundary adjustment during the later contour carving stages (as shown in Fig. 1(d)), a stage-aware strategy that has also been explored in other learning frameworks to improve robustness and representation stability across training stages [23, 24, 25]. To address these issues, we propose a structure and progress aware di ff usion model (SPAD) for medical image segmentation. It consists of two key components of semantic-concentrated di ff usion (ScD) and boundary-centralized di ff usion (BcD) modulated by a progress-aware scheduler (PaS). The ScD introduces anchor-preserved target perturba-tion by perturbing pixels within a specific medical target but preserving small unaltered areas as semantic anchors, guiding the model to infer the corrupted regions from the surrounding semantic context. The BcD introduces progress-aware noise to the bound-ary regions, suppressing the influence of unreliable or ambiguous boundaries of medi-cal targets, encouraging the model to focus on learning coarse anatomical morphology and global semantics during early stages. The progress-aware scheduler (PaS) gradu-ally modulates noise intensity in both ScD and BcD throughout the training process, ensuring a smooth transition from understanding coarse morphological and semantic structures to carving fine boundaries. In summary, the main contributions of this paper are 4 folds: 
+
+• We propose a novel structure and progress aware di ff usion (SPAD) for medical image segmentation, which makes use of morphological and semantic structures 4and alleviates the boundary ambiguity as well. 
+
+• We introduce a semantic-concentrated di ff usion (ScD) mechanism, which guides inferring corrupted areas from the surrounding semantic context and improves the inter-target structural reasoning and anatomical rationality. 
+
+• We propose a boundary-centralized di ff usion (BcD) mechanism, which suppresses unreliable medical boundaries and focuses on learning coarse anatomical mor-phology and global semantics during early stages. 
+
+• We propose a progress-aware scheduler (PaS) tailored for di ff usion-based seg-mentation models, which encourages a coarse-to-fine paradigm that prioritizes acquiring coarse and stable structures and gradually shifts to carving fine and unreliable boundaries. 
+
+2. Related Works 
+
+2.1. Structure-Aware Segmentation 
+
+Precision medical image segmentation requires capturing both fine-grained object boundaries and high-level semantic structures, such as global shapes and inter-target spatial relationships. Boundary information is often ambiguous due to low contrast, noise, or annotation uncertainty, while structural cues are generally more stable and informative, making e ff ective utilization of both types of information crucial for ro-bust segmentation. Existing approaches address these challenges in two main ways. One line of work introduces explicit structural priors to guide the model: SPGNet [17] employs PCA-based statistical shape models, DSAIF [26] applies Max-tree /Min-tree topological filtering, DSC-AMP [15] dynamically adapts convolutional kernels to anatomical morphology. SPM [27] injects global and local shape priors in a U-Net framework, and a recent shape-intensity knowledge distillation method [28] transfers shape-intensity knowledge via teacher-student training for improved cross-domain ro-bustness. Another line of work encodes structural information implicitly through ar-chitectural design: D-LKA Net[14] captures local and global context with deformable 5large-kernel attention, Swin-DeformAttn [29] and DeformUX-Net [30] leverage de-formable and large-kernel operators to enhance anatomical consistency without ex-tra supervision, and multi-scale fine-grained feature extraction has also been explored [31]. Style or domain adaptation methods also maintain structural consistency across domains but do not provide direct guidance during training. Despite advancements, most existing methods supervise both structure and boundary regions simultaneously, which can lead to suboptimal learning when boundaries are ambiguous. In contrast, our approach decouples structure learning from boundary refinement via a progress-aware training schedule. This enhances robustness and accuracy, especially in scenarios with uncertain or ambiguous boundaries. 
+
+2.2. Di ff usion Models for Medical Image Analysis 
+
+Di ff usion models have recently gained prominence in medical image analysis due to their ability to model complex data distributions, handle uncertainty, and gener-ate high-fidelity anatomical structures. These properties make them suitable for a wide range of tasks, including image reconstruction, denoising, data augmentation, and segmentation [32, 33, 34]. A key challenge across these applications is ensuring that the generated or reconstructed images preserve both global anatomical structures and fine-grained details, particularly in regions with low contrast, noise, or ambiguous boundaries. Di ff usion models have shown significant potential in overcoming these challenges, thereby advancing the state-of-the-art in medical image processing. Ex-isting works can be broadly categorized into two main directions [32, 35]. The first direction focuses on task-driven applications [36, 37, 22], where di ff usion models are applied to specific medical image tasks, such as segmentation, lesion detection, and organ localization. For example, MedSegDi ff [36] and MedSegDi ff -V2 [37] incorpo-rate dynamic conditional encoding and transformer-based components, improving the model’s ability to handle complex anatomical variations and provide accurate segmen-tations. Similarly, Di ff -UNet [22] introduces step-uncertainty fusion in a 3D U-Net to improve robustness in volumetric prediction, which is particularly useful for tasks that involve three-dimensional medical data. These existing di ff usion-based segmentation methods [36, 37] mainly improve performance through architectural conditioning or 6inference-stage aggregation, and they generally apply uniform noise modeling during training. In contrast, our approach focuses on regulating the training process itself by introducing region-aware perturbations and a progress-guided learning strategy, explic-itly decoupling structural learning from boundary refinement in a coarse-to-fine man-ner. These models are designed to optimize task performance and adapt to the specific challenges presented by di ff erent medical imaging applications. The second direction focuses on training process and strategy optimization [38, 39], where the emphasis is on enhancing the model’s learning capabilities through novel training strategies. The methods in this category often introduce mechanisms such as boundary-region noise injection or selective perturbations to guide the learning process. For instance, noise-to-noise frameworks like SSIM [38] and other denoising methods have been explored to refine image generation and restoration. These strategies enhance the model’s ro-bustness towards noise and enable it to generate high-quality images from noisy data. Additionally, some methods (such as MRF-IDDPM [39]) focus on improving image reconstruction and enhancing structure consistency by modulating the noise injection process. These techniques optimize the way the model learns from noisy and ambigu-ous data, ensuring better generalization across diverse medical imaging tasks. Our method uses di ff usion models to separate structure and boundary learning, improving segmentation accuracy. By prioritizing structure learning and boundary refining suc-cessively, it performs well in challenging cases with ambiguous boundaries or complex structures. 
+
+3. Methods 
+
+3.1. Preliminary 
+
+Di ff usion models comprise a forward noising process and a reverse denoising pro-cess. During the forward process, Gaussian noise is progressively injected into the ground-truth segmentation label x0, producing a sequence of increasingly corrupted representations {x1, x2, . . . , xT } over T discrete timesteps. It defines a Markov chain where each state depends only on its predecessor. In contrast, the reverse process aims to learn the conditional distributions that recover the clean label map from the noisy ob-7Conditional   
+
+> Diffusion Model
+> Condition
+> Encoder
+> 𝒙 𝑡 +1𝒙 𝑡 𝒙 𝑡 −1
+> Boundary -
+> centered
+> Perturbing
+> Semantic -
+> concentrated
+> Perturbing
+
+Progress   
+
+> Progress -
+> aware
+> Scheduler
+> ……
+> PτPτ−iPτ+j
+> SPAD
+> SPAD
+
+SPAD 
+
+> …
+> 𝒙 𝑇
+> …
+> 𝒙 0
+> ෨𝑰
+> Conditional
+> Diffusion Model
+> Condition
+> Encoder
+> Boundary -
+> centered
+> Perturbing
+> Semantic -
+> concentrated
+> Perturbing
+> ෨𝑰
+
+Figure 2: Overview of the proposed structure and progress-aware di ff usion (SPAD) framework. The con-ditional di ff usion model progressively denoises the final segmentation prediction x0 from a random noise 
+
+xT (initial noise input) and the perturbed segmentation image (progress-aware noise condition) step by step. The progress-aware noise condition is generated from the combination of boundary-centered perturbing and semantic-concentrated perturbing. At each step, the perturbing intensities are dynamically modulated by a progress-aware scheduler (PaS), enabling a progress-aware coordination of the coarse structures and fine boundaries in medical segmentation targets. 
+
+servations by reversing this degradation step-by-step. The generative process factorizes as: 
+
+p(x0: T −1 | xT ) =
+
+TY
+
+t=1
+
+p(xt−1 | xt), (1) where each term p(xt−1 | xt) is parameterized by a neural network trained to approxi-mate the inverse of the forward noising step. The reverse process begins with a sample drawn from an isotropic Gaussian distribution, p(xT ) = N(0 , En×n), where E denotes the identity matrix. Over time, this sample is refined through iterative denoising steps, guided by the learned model p, until it converges to a segmentation map. To adapt di ff usion models for semantic segmentation, the denoising process is con-ditioned on an input image I. This conditioning allows the model to incorporate struc-ture cues from I while recovering the segmentation mask. Specifically, a noise predic-tion function ϵ(xt, I, t) is learned, which estimates the noise added at timestep t, given the noisy segmentation state xt, the image I, and the timestep index t. The condition image and the current segmentation estimate are first embedded into latent features, 8which are fused to predict the noise: 
+
+ϵ(xt, I, t) = f (ϕ(xt), ψ (I), t), (2) where ϕ(·) and ψ(·) denote feature extractors for the noisy label and the input image respectively, and fθ(·) is a denoising function that operates on these features together with the embedded timestep t. The final segmentation map is obtained by repeating the denoising process from t = T to t = 0. 
+
+3.2. Overview of Structure and Progress Aware Di ff usion 
+
+The overview pipeline of the proposed structure and progress aware di ff usion (SPAD) framework for medical image segmentation is shown in Fig. 2. The SPAD is built upon a conditional di ff usion backbone that generates segmentation maps conditioned on the medical image input. During training, the input image and its ground-truth mask are routed in parallel to two perturbation modules: semantic-concentrated perturbing (ScP) and boundary-centered perturbing (BcP). Semantic-concentrated di ff usion (ScD) and boundary-centralized di ff usion (BcD) are primarily realized by ScP and BcP, respec-tively, while their behaviors are regulated by the Progress-aware Scheduler (PaS). In detail, the ScD strategy perturbs selected target regions while preserving anchor areas. This design enables the model to exploit semantic context from surrounding targets while retaining stable reference signals, thereby enhancing global structural reasoning and improving lesion localization. In contrast, the BcD strategy focuses on contour regions by injecting noise into uncertain boundaries. It guides the model to pay more attention to ambiguous edges and progressively refine fine-grained details, result-ing in sharper and more coherent boundary delineations. Both the ScD and BcD are coordinated by the progress-aware scheduler, which modulates perturbation strength across training epochs by gradually decreasing the perturbation intensity to enable a transition from learning coarse anatomical structures to refining fine boundary details. Overall, ScD and BcD introduce two di ff erent uncertainties in medical segmenta-tion (semantic incompleteness and boundary unreliability), and PaS regulates their per-turbation intensity along training to realize a non-redundant progress-guided learning trajectory. Although both ScD and BcD adopt structured perturbations, they address 9di ff erent uncertainty sources and are therefore complementary rather than redundant: ScD mainly targets semantic incompleteness inside objects by perturbing target regions while preserving sparse anchors, encouraging context-based semantic and morphologi-cal reasoning; in contrast, BcD targets boundary unreliability by selectively perturbing ambiguous edges, reducing premature overfitting to noisy boundary supervision. PaS further di ff erentiates their roles by scheduling their influence over training. Eventually, the perturbed images processed by ScD, BcD, and the progress-aware scheduler are merged to form the conditioning input of the condition encoder. Denoting the ScD and BcD perturbed images by ˜ Is and ˜ Ib, the final conditioning image is ˜I = ˜Is ⊕ ˜Ib,
+
+where ⊕ denotes merging the two noises by preserving their union. We will introduce the semantic-concentrated di ff usion (ScD), boundary-centralized di ff usion (BcD), and progress-aware scheduler (PaS) in detail in the following sections. 
+
+3.3. Semantic-concentrated Di ff usion (ScD) 
+
+In our framework, we introduce a semantic-concentrated di ff usion (ScD) strategy to enhance the SPAD’s ability to capture semantic structures. As shown in Fig. 3, ScD is operationally realized by the semantic-concentrated perturbing (ScP) module and coordinated by the progress-aware scheduler (PaS). The PaS controls the strength of the injected noise over training and gradually reduces it along the training progress ( P)from the beginning of training ( Pstart ) to the end ( Pend ). This strategy first selects target regions from the input image I via semantic sampling, and then applies localized noise within these regions while preserving a subset of pixels through anchor injection. The injected anchors serve as stable semantic cues, whereas the perturbed pixels compel the model to exploit surrounding context to infer the missing or corrupted areas. Assume that there are N medical targets in the input image I needing segmentation, in which the i-th target is denoted as Ci. At each training epoch p, a subset of target indices Ct ⊆ { C1, . . . , CN } is randomly sampled to be perturbed. The subset size de-creases progressively during the training process according to the equation as follows, 10 |C t| =
+
+$ m
+
+1 + γ · p
+
+%
+
+, (m < N) (3) where m denotes the maximum number of perturbed targets at the beginning of training and γ controls the decay speed. As a result, more targets are perturbed in the early training stages, while more complete semantic information is provided in later stages. Since the selected targets in medical images di ff er from batch to batch, the diverse perturbation patterns across samples and batches also prevent the di ff usion model from overfitting to specific regions in an image. For each selected target, we derive a binary mask from the ground-truth label and randomly retain a fixed proportion of pixels (e.g., 30%) as anchors. While the re-maining pixels define the perturbation mask Ms (1 on perturbed pixels, 0 elsewhere, same size as I). Gaussian noise is then added only within Ms to produce the perturbed conditioning image ˜ I:˜Is = I + Ms ⊙ ϵ, ϵ ∼ N (0, σ 2
+
+> p
+
+) (4) where ⊙ denotes element-wise multiplication, σp is the perturbation intensity at the p-th training epoch (progress), which is progress-aware and is modulated by the progress-aware scheduler (PaS). Finally, the perturbed image ˜ Is is encoded together with anchors and unaltered regions. As a result, during forward propagation, the model must recon-struct the perturbed regions under the guidance of the sparse semantic cues provided by the anchors. In summary, this training process guides inferring corrupted areas from the surrounding semantic context and improves the inter-target structural reasoning and anatomical rationality. 
+
+3.4. boundary-centralized di ff usion (BcD) 
+
+boundary-centralized di ff usion (BcD) is designed to selectively perturb the bound-ary regions of segmentation labels during training, thereby preventing the model from relying too heavily on ambiguous or uncertain edges. In detail, the BcD is implemented by a boundary-centered perturbing (BcP) module and coordinated by the progress-aware scheduler (PaS). As illustrated in Fig. 4, the strategy begins by constructing a boundary mask from the ground-truth label x0. To achieve this, we first apply a 11 ×          
+
+> +
+> Semantic
+> Sampling
+> Anchor
+> Injection
+> P𝑠𝑡𝑎𝑟𝑡 P𝑛
+> ……
+> P𝑒𝑛𝑑 ……
+> Progress
+> P𝑠𝑡𝑎𝑟𝑡 P𝑛
+> ……
+> P𝑒𝑛𝑑 ……
+> Progress
+> Progress -aware Scheduler Denoised Masks
+> P𝑠𝑡𝑎𝑟𝑡 P𝑛 P𝑒𝑛𝑑
+> ……
+> Zoom -in view
+> Semantic -concentrated Perturbing
+
+Figure 3: Illustration of the semantic-concentrated di ff usion (ScD), which perturbs pixels within a specific medical target with progress-aware noise but preserves small unaltered areas as semantic anchors, encourag-ing structure-guided reasoning and context-based reconstruction. 
+
+contour detector (such as the Canny operator) with relatively high thresholds so that the extracted results focus on sharp and well-defined contours. The higher thresholds help suppress weak responses caused by noise or annotation inconsistencies, yielding a boundary map that better approximates the regions where boundary uncertainty is most likely to occur. Once the boundary mask is obtained, the Gaussian noise is injected at the corre-sponding pixels in the input image I around the detected boundary, which is similar to the formulation in the ScD strategy. Concretely, letting Mb denote the binary bound-ary mask (where pixels fall on boundary pixels are 1, elsewhere are 0), we perturb boundary locations only, i.e. ˜Ib = I + Mb ⊙ ϵ, ϵ ∼ N (0, σ 2
+
+> p
+
+) (5) Unlike the above ScD, which perturbs the interior of target regions, the BcD produces narrow and elongated perturbations centered along detected contours (see Fig. 4). This makes the corruption pattern sparse and well localized, directly targeting the transi-12 Contour          
+
+> Detector
+> P𝑠𝑡𝑎𝑟𝑡 P𝑛
+> ……
+> P𝑒𝑛𝑑 ……
+> Progress
+> ×
+> +
+> Progress -aware Scheduler
+> P𝑠𝑡𝑎𝑟𝑡 P𝑛
+> ……
+> P𝑒𝑛𝑑 ……
+> Progress
+> Denoised Masks
+> P𝑠𝑡𝑎𝑟𝑡 P𝑛 P𝑒𝑛𝑑 ……
+> Zoom -in view
+> Boundary -centered Perturbing
+
+Figure 4: Illustration of the boundary-centralized di ff usion (BcD). It first extracts the target boundary with a contour detector (such as the Canny operator) from the ground-truth mask label, and then blurs the unreliable and ambiguous boundary with Gaussian noise to lower the reliance on uncertain boundaries during early target understanding stages. 
+
+tion zones between di ff erent classes. The perturbed input ˜ I thus retains the integrity of interior structures while presenting degraded edge information, ensuring that the net-work processes boundaries under controlled uncertainty. Eventually, the BcD makes the input image remain globally coherent but exhibits band-like corrupted areas around its boundaries. This kind of boundary-centered corruption prevents the di ff usion model from memorizing precise edge pixels and encourages it to infer contours from the struc-tural surrounding context. 
+
+3.5. Progress-aware Scheduler (PaS) 
+
+The progress-aware scheduler (PaS) controls the whole learning trajectory (see Fig. 3 and Fig. 4) by progressively reducing the overall noise intensity. In other words, the “progress” denotes the stage-wise learning progression from coarse structural rep-resentation learning to fine boundary refinement. The PaS explicitly encodes this pro-gression by scheduling the perturbation intensity over training epochs, providing a suc-cinct and stable way to coordinate ScD /BcD with the intended coarse-to-fine learning 13 trajectory. During early training stages, the model is exposed to corrupted inputs with high noise intensity, which forces it to focus on learning coarse and stable structures. This allows the model to develop a strong understanding of the overall morphology and semantics and avoid being distracted by fine details at the beginning of training. As the training course continues, the noise intensity gradually decreases, enabling the model to gradually shift to fine and unreliable boundary adjustment during later contour carv-ing stages. Formally, the noise intensity σp in Fig. 3 and Fig. 4 is controlled by the following decay function epoch by epoch: 
+
+σp = σmax 
+
+1 + β · p (6) where σmax is the initial noise intensity, and β controls the decreasing rate of perturb-ing noise. We adopt this inverse-form decay because it could provide a simple, mono-tonic, and numerically stable attenuation with a controllable long-tail, which smoothly matches the intended progress-guided transition from structure learning to boundary refinement, while remaining the integration simplicity without introducing additional schedule-specific constraints. This decay function ensures that in the early stages of training, the model is exposed to higher levels of noise intensity, which helps it fo-cus on coarse morphological and semantic structures in medical images. As the noise diminishes over time, the model begins to carve the more subtle boundary details, im-proving segmentation accuracy on challenging cases where fine boundaries of medical targets (such as tumors and lesions) are usually ambiguous and noisy. The same noise intensity is applied to every image batch in a training epoch, ensuring every image undergoes a similar perturbation process throughout a full training epoch. 
+
+4. Experiments 
+
+4.1. Datasets 4.1.1. AMD-SD Dataset 
+
+We evaluate our method on the AMD-SD dataset [43], a high-quality OCT dataset for wet age-related macular degeneration lesion segmentation. It comprises 3,049 14 Table 1: Comparing with the state-of-the-art methods in medical image segmentation on the AMD-SD dataset                                                                   
+
+> Methods mIoU (%) ↑mDice (%) ↑
+> SRF IRF PED SHRM IS /OS Mean SRF IRF PED SHRM IS /OS Mean U-Net [4] 64.81 64.82 66.14 56.37 72.06 64.48 78.65 78.66 79.62 72.10 83.76 78.40 Swin-Unet [40] 69.92 58.28 64.20 62.75 75.65 65.93 82.30 73.64 78.20 77.11 86.14 79.47 TransUnet [41] 69.49 59.81 65.19 60.29 73.39 65.49 82.00 74.85 78.93 75.23 84.65 79.15 MSA [11] 55.07 45.23 54.94 55.93 49.58 52.03 71.03 62.29 70.92 71.74 66.29 68.45 D-LKA Net [14] 65.59 55.32 55.30 57.29 73.42 61.08 79.22 71.23 71.22 72.85 84.67 75.84 DSC-AMP [15] 71.69 66.06 74.09 60.13 73.99 69.02 83.51 79.56 85.12 75.10 85.05 81.67 CCDM [42] 72.96 66.98 74.70 57.75 74.54 69.39 84.37 80.23 85.52 73.22 85.41 81.93
+> SPAD (ours) 74.24 69.79 76.79 59.99 76.72 71.51 85.22 82.21 86.87 74.99 86.83 83.39
+
+B-scan images from 138 patients (156 eyes), each annotated for five lesion-related structures: subretinal fluid (SRF), intraretinal fluid (IRF), ellipsoid-zone continuity (IS /OS), subretinal hyperreflective material (SHRM), and pigment epithelial detach-ment (PED). Following the protocols in [43], the data are randomly split into 80% for training and 20% for testing at the patient level. The images undergo a multi-stage an-notation process involving junior ophthalmologists and senior experts, achieving high inter-annotator agreement (Dice 0.902–0.979). 
+
+4.1.2. CXRS Dataset 
+
+The Chest X-ray Segmentation (CXRS) dataset [15] contains 1,254 high-resolution chest X-ray images (most exceeding 2 K × 2 K) with pixel-wise annotations for 31 anatomical structures, including 24 ribs, 2 clavicles, 2 scapulae, 2 lungs, and 1 medi-astinum. The dataset is divided into training (879), validation (125), and test (250) sets in a 7:1:2 ratio, with each subset maintaining a 3:2 ratio between normal and abnormal (lesion-present) cases. 
+
+4.2. Implementation Details 
+
+We utilize the Adam optimizer [44] with an initial learning rate of 4 ×10 −4, a weight decay of 1 × 10 −5, and a batch size of 8. The model is trained for 200 epochs on the AMD-SD dataset and 100 epochs on the in-house CXRS dataset. All input images are normalized to the range [0 , 1] and resized to fixed resolutions (256 × 256 for AMD-SD 15 Table 2: Comparing with the state-of-the-art methods in medical image segmentation on the CXRS dataset 
+
+Methods mIoU (%) ↑ mDice (%) ↑
+
+U-Net [4] 66.85 77.35 Swin-Unet [40] 66.37 77.12 TransUNet [41] 67.12 77.53 MSA [11] 61.03 73.27 D-LKA Net [14] 69.53 79.54 DSC-AMP [15] 70.34 82.58 CCDM [42] 69.98 82.33 
+
+SPAD (ours) 71.55 83.42 
+
+and 512 ×512 for CXRS). As described in Section III, the ScD and BcD are both guided by the PaS, which adopts a Gaussian noise schedule defined as σp = σmax /(1 + βp)with σmax = 0.5 and β = 0.2. For ScD, the perturbation starts from 3 targets ( m = 3) and gradually decays with γ = 0.1, while 30% of each target mask is randomly retained as anchors. The whole framework is optimized with a standard conditional categorical di ff u-sion loss [45, 42]. Specifically, during the intermediate di ff usion steps, the loss func-tion consists of a pixel-wise Kullback-Leibler divergence between the predicted reverse transition and true posterior distribution. At the final step, the loss function reduces to a cross-entropy loss based on the ground-truth segmentation. This approach ensures eff ective training of the di ff usion model, allowing it to progressively denoise the cor-rupted segmentation maps and recover the clean label distributions. 
+
+4.3. Comparison with State-of-the-art Methods 
+
+To validate the e ff ectiveness of the proposed Structure and Progress Aware Dif-fusion model (SPAD), we conduct experiments on two medical image segmentation benchmarks, including the AMD-SD dataset and the CXRS dataset. For fairness, all baseline methods are trained and evaluated under the same settings described in the Implementation Details. We report both mean IoU (mIoU) and mean Dice (mDice), 16 with results averaged over multiple runs. The baselines include conventional archi-tectures (U-Net [4], TransUnet [41], Swin-Unet [40]), foundation model-based ap-proaches (MSA [11]), structure-aware networks (D-LKA Net [14], DSC-AMP [15]), and the di ff usion-based CCDM [42]. 
+
+4.3.1. Experimental Comparison on the AMD-SD Dataset 
+
+The segmentation results on AMD-SD dataset are shown in Table 1. The proposed SPAD achieves the best overall performance, with 71.51% mIoU and 83.39% mDice. Compared with the second-best method CCDM [42], this corresponds to improvements of +2.12% and +1.46%. Conventional encoder–decoder architectures such as U-Net [4], TransUnet [41], and Swin-Unet [40] optimize all pixels uniformly throughout training, without mecha-nisms to adaptively emphasize uncertain regions. This uniform treatment often leads to failures on irregular morphologies or blurred contours. By contrast, SPAD employs a progressive learning paradigm that explicitly separates structural representation learn-ing from boundary refinement and schedules their optimization over time, allowing the model to adaptively focus on stable structures first and refine uncertain areas later. As shown in Table 1, while SPAD consistently achieves superior overall performance, we observe a slight performance drop on the SHRM category compared to other cat-egories. The SHRM category often appears as small, fragmented regions with com-plex local patterns. It makes segmenting this category more challenging since accurate delineation of small and fragmented regions heavily depends on fine-grained local de-tails and precise boundary adjustment. Our SPAD framework is designed to improve segmentation stability and structural consistency across categories, particularly in sce-narios with di ff use or noisy boundaries, resulting in consistent improvements for most categories, including SRF, IRF, and PED. However, for categories that require a higher focus on fine-grained local details and precise boundary delineation (such as SHRM), the slightly smoother results generated from SPAD are not optimal. This mild perfor-mance trade-o ff for SHRM highlights the robustness of SPAD in dealing with structural uncertainty, but also suggests additional reform for handling small, fragmented targets. We plan to explore this issue in future work by investigating adaptive strategies for 17 di ff erent category types. Foundation model-based approaches such as MSA [11] leverage large-scale pre-training, which provides strong general features but lacks task-specific adaptation. As a result, their performance drops in specialized datasets like AMD-SD, where fine-grained lesion delineation is crucial. SPAD, on the other hand, is designed as a task-oriented framework that incorporates structural priors and boundary refinement into the learning process itself, ensuring both adaptability and precision in domain-specific sce-narios. Structure-aware models such as D-LKA Net [14] and DSC-AMP [15] attempt to encode morphological priors through enlarged receptive fields or dynamic convolu-tional operators. However, they optimize structural and boundary cues in a fully cou-pled manner, often causing conflicts between global semantics and fine details. SPAD avoids this by decoupling structural learning and boundary refinement into ScD and BcD, respectively, and coordinating them with the progress-aware scheduler to ensure a stable coarse-to-fine progression. Finally, CCDM [42], though sharing the same dif-fusion backbone as ours, mainly focuses on conditional sampling of label distributions and lacks explicit structural priors or progressive supervision. SPAD extends this line by embedding semantic anchors, introducing boundary-aware perturbations, and con-trolling the training trajectory with the progress-aware scheduler, which collectively leads to stronger robustness and higher accuracy under ambiguous or missing-class conditions. 
+
+4.3.2. Experimental Comparison on the CXRS Dataset 
+
+Table 2 reports the results on the CXRS dataset. SPAD achieves the best per-formance with 71.55% mIoU and 83.42% mDice, surpassing the second-best method CCDM [42] by +1.57% and +1.09%. Respectively, conventional architectures such as U-Net [4], TransUnet [41], and Swin-Unet [40] process all pixels in the same way across training, which limits their ability to adapt to irregular shapes and blurred con-tours. By contrast, SPAD progressively schedules structural and boundary learning, allowing the model to handle reliable regions first and refine uncertain areas later. Foundation model-based methods like MSA [11] benefit from large-scale pretraining but lack e ff ective adaptation to specialized datasets. SPAD di ff ers in being explicitly 18 Table 3: Ablation results on the AMD-SD dataset 
+
+Methods mIoU (%) ↑ mDice (%) ↑
+
+Baseline [42] 69.79 82.20 ScD with PaS 70.93 83.00 BcD with PaS 71.04 83.06 ScD +BcD without PaS 44.07 61.17 ScD +BcD with PaS ( ours ) 71.51 83.39 designed for task-specific segmentation, embedding both structural priors and bound-ary refinement into the training process. Structure-aware networks such as D-LKA Net [14] and DSC-AMP [15] exploit morphological priors, but they couple coarse and fine cues together, which may cause optimization conflicts. SPAD avoids this by de-coupling the two stages and coordinating them through the progress-aware scheduler, ensuring smoother learning. Finally, CCDM [42], though based on the same di ff usion backbone, focuses only on label distribution modeling and does not employ progressive supervision. SPAD extends this paradigm with noise-guided structural and boundary perturbations, yielding more accurate and robust results on CXRS. 
+
+4.4. Ablation Studies 
+
+To better understand the e ff ectiveness of each proposed component, we perform ablation studies on the AMD-SD dataset, as summarized in Table 3. Starting from the base segmentation framework CCDM [42], we evaluate the individual impact of the proposed components: including ScD (semantic-concentrated di ff usion), BcD (boundary-centralized di ff usion), and the progress-aware scheduler (PaS). When applying only the ScD and PaS, the performance improves the mIoU from 69.79% to 70.93% mIoU and from 82.20% to 83.00% for mDice, indicating that preserving anchor regions while per-turbing semantic classes helps the model better reason over partial occlusion or class ambiguity. When further applying BcD on top of ScD further enhances the segmenta-tion quality, leading to 71.51% mIoU and 83.39% mDice. This shows that boundary-aware perturbation brings additional gains beyond class-level perturbation, and the two strategies together form a complementary design that enables the model to capture both 19 Baseline  [41] 
+
+> SPAD w/o BcD
+> SPAD (ours)
+> Ground -truth
+> SPAD w/o ScD
+
+Figure 5: Qualitative visualization of segmentation results on the AMD-SD dataset. From bottom to top: ground truth (GT), segmentation mask predicted from our SPAD, the SPAD without ScD (SPAD w /o ScD), the SPAD without BcD (SPAD w /o BcD), and the di ff usion baseline without both ScD and BcD (Baseline). (1) The white boxes in the left four columns indicate representative regions where the baseline model fails to correctly localize target structures or produces incorrect predictions. Compared with the baseline, the methods incorporating ScD exhibit improved structural localization in these regions. (2) The green boxes in the right four columns indicate boundary-sensitive regions where the baseline produces imprecise or irreg-ular contours. Compared with the baseline, the methods incorporating BcD yield more accurate boundary delineation. (3) When both ScD and BcD are incorporated, the predictions combine the advantages of both components and achieve the best. 
+
+global semantic consistency and fine-grained boundary details, resulting in a more ro-bust and well-structured learning process. In addition, Table 4 reports the computational cost of U-Net, the di ff usion base-line, and SPAD under the same hardware setting. As observed, di ff usion-based mod-els require longer training and inference time than the classical U-Net framework [4], which is mainly attributed to the intrinsic iterative denoising and sampling process. Compared with the di ff usion baseline, SPAD introduces only lightweight mask-based perturbation and scheduling operations, resulting in nearly identical training and in-ference time. This indicates that the proposed structure- and progress-aware strategies incur only marginal additional overhead within the di ff usion modeling framework. 20 Table 4: E ffi ciency comparison 
+
+Methods Training Testing UNet [4] 3.9h 0.02h CCDM (di ff usion baseline) [42] 21.5h 0.78h SPAD (ours) 21.6h 0.78h 
+
+4.5. Visualization Analysis 
+
+We further provide qualitative comparisons in Fig. 5 to illustrate the visual im-pact of the proposed perturbation strategies. From bottom to top, the figure presents ground truth (GT), segmentation mask predicted from our SPAD, the SPAD without ScD (SPAD w /o ScD), the SPAD without BcD (SPAD w /o BcD), and the SPAD with-out both BcD and ScD (Baseline). As shown in the first row, the baseline model frequently yields incomplete or frag-mented predictions, particularly in regions with blurred boundaries or subtle lesion appearances. The white-boxed regions highlight cases where the baseline fails to cor-rectly localize target structures or produces incorrect predictions. Compared with the baseline, incorporating ScD improves the recovery of coherent semantic regions and enhances structural localization. The green-boxed regions focus on boundary-sensitive areas, where the baseline predictions exhibit imprecise or irregular contours. In these regions, incorporating BcD leads to more accurate boundary delineation. When both perturbation strategies are applied under the same scheduler, the resulting predictions combine the advantages of both components relative to the baseline. The highlighted regions demonstrate that the scheduler-guided perturbation strategy enables the model to capture both global structure and fine-grained details, yielding results that are visu-ally closer to the ground truth. 
+
+4.6. Parameter Sensitivity Analysis 
+
+We conduct sensitivity analysis of the decay parameter β in the progress-aware scheduler in Fig. 6 (a) . The results show that the segmentation performance varies with di ff erent decay rates and reaches a clear peak around β = 0.2, which is adopted 21 Figure 6: Analysis of the parameter sensitivity and training stability of the proposed SPAD. (a) Sensitivity analysis of the scheduler decay parameter β in the progress-aware scheduler (PaS). (b) Sensitivity analysis of the semantic anchor ratio r in the semantic-concentrated di ff usion (ScD). (c) Convergence behavior of training the SPAD on the AMD-SD dataset. 
+
+in our main experiments. Both smaller and larger values lead to inferior performance, suggesting that an appropriate decay rate is important for coordinating the transition from early structural learning to later boundary refinement. We analyze the impact of the semantic anchor ratio of the Semantic-concentrated Di ff usion (ScD) in Fig. 6 (b). The segmentation performance exhibits a non-monotonic trend with respect to the anchor proportion. When the anchor ratio is too small, insu ffi -cient semantic references lead to degraded performance, while excessively large ratios weaken the perturbation e ff ect. A moderate anchor ratio (around 30%) achieves the best overall performance, reflecting a balanced trade-o ff between semantic preserva-tion and perturbation strength. 
+
+4.7. Training Stability Analysis 
+
+We analyze the convergence behavior of training SPAD on the AMD-SD dataset in Fig. 6 (c). The segmentation performance shows a clear upward trend throughout the training process, with moderate fluctuations during the early and intermediate stages, which are common reported in di ff usion-based optimization [46, 47]. As training pro-gresses, the curve gradually stabilizes and converges to a steady plateau, indicating the well training stability without any divergence or collapse. 22 5. Conclusion 
+
+In this paper, we propose a progress-aware di ff usion model for medical image seg-mentation, built upon a conditional di ff usion backbone and coordinated by a progress-aware scheduler (PaS). The framework integrates two complementary perturbation strategies that consist of semantic-concentrated di ff usion (ScD) and boundary-centralized di ff usion (BcD). The ScD introduces anchor-guided targets perturbation under sched-uler control to enhance structural reasoning and improve lesion localization during early coarse Structure stages. The BcD injects boundary-centered perturbation to refine ambiguous contours at later fine boundary stages. Besides, our progress-aware sched-uler (PaS) schedules ScD and BcD along training, improving robustness to boundary ambiguity while maintaining structural consistency. Extensive experimental results on the AMD-SD and CXRS datasets demonstrate consistent and significant performance improvement regarding the mIoU and mDice metrics. Despite the consistent improve-ments achieved by the proposed SPAD, it also faces several limitations remain. On the one hand, the fixed-width boundary perturbation design may be less flexible for ex-tremely thin or highly elongated anatomical structures, especially during early training stages. Fortunately, our progressive scheduling mechanism partially mitigates this ef-fect over time, but more adaptive perturbation strategy could further improve structural flexibility. On the other hand, as a naive di ff usion-based framework, SPAD inherits the relative computational overhead of iterative denoising. In the future, we will ex-plore adaptive perturbation designs and more e ffi cient di ff usion variants to enhance both structural generalization and computational e ffi ciency. 
+
+Acknowledgments : This work was supported in part by the National Natural Science Foundation of China (No. 62506003, No. 62376004, No. U24A20342), the Anhui Provincial Natural Science Foundation (No. 2408085QF201), Natural Science Re-search Major Project of Anhui Provincial Education Department (2025AHGXZK20020), and the Open Project of Anhui Provincial Key Laboratory of Intelligent Detection and Diagnosis for Tra ffi c Infrastructure (No. KY-2025-03). 
+
+References 
+
+23 [1] G. Hu, S. Song, Y. Kang, Z. Yin, G. Zhao, C. Li, and J. Tang, “Federated client-tailored adapter for medical image segmentation,” IEEE Transactions on Infor-mation Forensics , vol. 20, pp. 6490–6501, 2025. [2] L. Liu, J. M. Wolterink, C. Brune, and R. N. Veldhuis, “Anatomy-aided deep learning for medical image segmentation: a review,” Physics in Medicine & Biol-ogy , vol. 66, no. 11, p. 11TR01, 2021. [3] J. Sun, Y. Peng, Y. Guo, and D. Li, “Segmentation of the multimodal brain tumor image used the multi-pathway architecture method based on 3d fcn,” Neurocom-puting , vol. 423, pp. 34–45, 2021. [4] O. Ronneberger, P. Fischer, and T. Brox, “U-net: Convolutional networks for biomedical image segmentation,” in International Conference on Medical image computing and computer-assisted intervention , pp. 234–241, 2015. [5] F. Isensee, P. F. Jaeger, S. A. Kohl, J. Petersen, and K. H. Maier-Hein, “nnu-net: a self-configuring method for deep learning-based biomedical image segmenta-tion,” Nature methods , vol. 18, no. 2, pp. 203–211, 2021. [6] Z. Zhou, M. M. Rahman Siddiquee, N. Tajbakhsh, and J. Liang, “Unet ++ : A nested u-net architecture for medical image segmentation,” in International work-shop on deep learning in medical image analysis , pp. 3–11, 2018. [7] S. Wang, W. Yu, C. Ma, J. Li, Z. Wang, and M. Gong, “Pf2smis: Personalized federated few-shot learning for medical image segmentation,” Pattern Recogni-tion , p. 113247, 2026. [8] K. Zhao, G. Song, C. Ge, W. Hu, and X. Liu, “Active test-time adaptation for continual medical image classification,” Pattern Recognition , p. 113288, 2026. [9] Y. Xie, J. Zhang, C. Shen, and Y. Xia, “Cotr: E ffi ciently bridging cnn and trans-former for 3d medical image segmentation,” in International conference on med-ical image computing and computer-assisted intervention , pp. 171–180, 2021. 24 [10] O. Dalmaz, M. Yurt, and T. Çukur, “Resvit: residual vision transformers for multimodal medical image synthesis,” IEEE Transactions on Medical Imaging ,vol. 41, no. 10, pp. 2598–2614, 2022. [11] J. Wu, Z. Wang, M. Hong, W. Ji, H. Fu, Y. Xu, M. Xu, and Y. Jin, “Medical sam adapter: Adapting segment anything model for medical image segmentation,” 
+
+Medical image analysis , vol. 102, p. 103547, 2025. [12] V. I. Butoi, J. J. G. Ortiz, T. Ma, M. R. Sabuncu, J. Guttag, and A. V. Dalca, “Uni-verseg: Universal medical image segmentation,” in Proceedings of the IEEE /CVF International Conference on Computer Vision , pp. 21438–21451, 2023. [13] J. Cheng, J. Ye, Z. Deng, J. Chen, T. Li, H. Wang, Y. Su, Z. Huang, J. Chen, L. Jiang, et al. , “Sam-med2d,” arXiv preprint arXiv:2308.16184 , 2023. [14] R. Azad, L. Niggemeier, M. Hüttemann, A. Kazerouni, E. K. Aghdam, Y. Velichko, U. Bagci, and D. Merhof, “Beyond self-attention: Deformable large kernel attention for medical image segmentation,” in Proceedings of the IEEE /CVF winter conference on applications of computer vision , pp. 1287–1297, 2024. [15] G. Hu, Y. Kang, G. Zhao, Z. Jin, C. Li, and J. Tang, “Dynamic strip convolution and adaptive morphology perception plugin for medical anatomy segmentation,” 
+
+IEEE Transactions on Medical Imaging , vol. 44, no. 6, pp. 2541–2552, 2025. [16] Z. Cheng, A. Qu, and X. He, “Contour-aware semantic segmentation network with spatial attention mechanism for medical image,” The Visual Computer ,vol. 38, no. 3, pp. 749–762, 2022. [17] Z. Song, X. Liu, W. Zhang, Y. Gong, T. Hao, and K. Zeng, “Spgnet: A shape-prior guided network for medical image segmentation,” in Proceedings of the Thirty-Third International Joint Conference on Artificial Intelligence , pp. 1263–1271, 2024. [18] F. Rachmadi, C. Poon, and H. Skibbe, “Improving segmentation of objects with varying sizes in biomedical images using instance-wise and center-of-instance 25 segmentation loss function,” in Medical Imaging with Deep Learning , pp. 286– 300, 2024. [19] J. Mendes, N. Matela, and N. Garcia, “Avoiding tissue overlap in 2d images: Single-slice dbt classification using convolutional neural networks,” Tomography ,vol. 9, no. 1, pp. 398–412, 2023. [20] S. G. Armato III, G. McLennan, L. Bidaut, M. F. McNitt-Gray, C. R. Meyer, A. P. Reeves, B. Zhao, D. R. Aberle, C. I. Henschke, E. A. Ho ff man, et al. , “The lung image database consortium (lidc) and image database resource initiative (idri): a completed reference database of lung nodules on ct scans,” Medical physics ,vol. 38, no. 2, pp. 915–931, 2011. [21] Y. Zhang, M. Xian, H.-D. Cheng, B. Shareef, J. Ding, F. Xu, K. Huang, B. Zhang, C. Ning, and Y. Wang, “Busis: a benchmark for breast ultrasound image segmen-tation,” Healthcare , vol. 10, no. 4, p. 729, 2022. [22] Z. Xing, L. Wan, H. Fu, G. Yang, and L. Zhu, “Di ff -unet: A di ff usion embedded network for volumetric segmentation,” arXiv preprint arXiv:2303.10326 , 2023. [23] K. Li, H. Chen, J. Wan, and S. Yu, “Ckdf-v2: E ff ectively alleviating representa-tion shift for continual learning with small memory,” IEEE transactions on neural networks and learning systems , vol. 36, no. 9, pp. 16171–16185, 2025. [24] K. Li, C. Ding, J. Wan, and S. Yu, “Enhance the old representations’ adaptability dynamically for exemplar-free continual learning,” Neurocomputing , vol. 639, p. 130286, 2025. [25] G. Hu, B. He, and H. Zhang, “Compositional prompting video-language models to understand procedure in instructional videos,” Machine Intelligence Research ,vol. 20, no. 2, pp. 249–262, 2023. [26] Y. Gu, Z. Sun, T. Chen, X. Xiao, Y. Liu, Y. Xu, and L. Najman, “Dual structure-aware image filterings for semi-supervised medical image segmentation,” Medi-cal Image Analysis , vol. 99, p. 103364, 2025. 26 [27] X. You, J. He, J. Yang, and Y. Gu, “Learning with explicit shape priors for medical image segmentation,” IEEE Trans. Medical Imaging , vol. 44, no. 2, pp. 927–940, 2025. [28] W. Dong, B. Du, and Y. Xu, “Shape-intensity knowledge distillation for robust medical image segmentation,” Frontiers Comput. Sci. , vol. 19, no. 9, p. 199705, 2025. [29] L. Wang, J. Huang, X. Xing, and G. Yang, “Hybrid swin deformable attention u-net for medical image segmentation,” in 19th International Symposium on Medi-cal Information Processing and Analysis , pp. 1–5, 2023. [30] H. H. Lee, Q. Liu, Q. Yang, X. Yu, S. Bao, Y. Huo, and B. A. Land-man, “Deformux-net: Exploring a 3d foundation backbone for medical im-age segmentation with depthwise deformable convolution,” arXiv preprint arXiv:2310.00199 , 2023. [31] J. Zhang, J. Zhang, G. Hu, Y. Chen, and S. Yu, “Scalenet: a convolutional net-work to extract multi-scale and fine-grained visual features,” IEEE Access , vol. 7, pp. 147560–147570, 2019. [32] A. Kazerouni, E. K. Aghdam, M. Heidari, R. Azad, M. Fayyaz, I. Hacihaliloglu, and D. Merhof, “Di ff usion models in medical imaging: A comprehensive survey,” 
+
+Medical image analysis , vol. 88, p. 102846, 2023. [33] G. Webber and A. J. Reader, “Di ff usion models for medical image reconstruc-tion,” BJR | Artificial Intelligence , vol. 1, no. 1, p. ubae013, 2024. [34] S.-L. Pan, K. Li, D.-H. Wang, X.-Y. Zhang, J. Liu, and S. Zhu, “Diverse fea-ture generation for zero-shot chinese character recognition,” Expert Systems with Applications , p. 129442, 2025. [35] Y. Shi, A. Abulizi, H. Wang, K. Feng, N. Abudukelimu, Y. Su, and H. Abuduke-limu, “Di ff usion models for medical image computing: A survey,” Tsinghua Sci-ence and Technology , vol. 30, no. 1, pp. 357–383, 2024. 27 [36] J. Wu, R. Fu, H. Fang, Y. Zhang, Y. Yang, H. Xiong, H. Liu, and Y. Xu, “Med-segdi ff : Medical image segmentation with di ff usion probabilistic model,” in Med-ical Imaging with Deep Learning , pp. 1623–1639, 2024. [37] J. Wu, W. Ji, H. Fu, M. Xu, Y. Jin, and Y. Xu, “Medsegdi ff -v2: Di ff usion-based medical image segmentation with transformer,” in Proceedings of the AAAI con-ference on artificial intelligence , vol. 38, pp. 6030–6038, 2024. [38] D. Wu, K. Gong, K. Kim, X. Li, and Q. Li, “Consensus neural network for medical imaging denoising with only noisy training samples,” in International Conference on Medical Image Computing and Computer-Assisted Intervention ,pp. 741–749, 2019. [39] P. Mayo, C. M. Pirkl, A. Achim, B. H. Menze, and M. Golbabaee, “Denois-ing di ff usion probabilistic models for magnetic resonance fingerprinting,” arXiv preprint arXiv:2410.23318 , 2024. [40] H. Cao, Y. Wang, J. Chen, D. Jiang, X. Zhang, Q. Tian, and M. Wang, “Swin-unet: Unet-like pure transformer for medical image segmentation,” in European conference on computer vision , pp. 205–218, 2022. [41] J. Chen, Y. Lu, Q. Yu, X. Luo, E. Adeli, Y. Wang, L. Lu, A. L. Yuille, and Y. Zhou, “Transunet: Transformers make strong encoders for medical image seg-mentation,” arXiv preprint arXiv:2102.04306 , 2021. [42] L. Zbinden, L. Doorenbos, T. Pissas, A. T. Huber, R. Sznitman, and P. Márquez-Neila, “Stochastic segmentation with conditional categorical di ff usion models,” in Proceedings of the IEEE /CVF International Conference on Computer Vision ,pp. 1119–1129, 2023. [43] Y. Hu, Y. Gao, W. Gao, W. Luo, Z. Yang, F. Xiong, Z. Chen, Y. Lin, X. Xia, X. Yin, et al. , “Amd-sd: An optical coherence tomography image dataset for wet amd lesions segmentation,” Scientific Data , vol. 11, no. 1, p. 1014, 2024. [44] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” in Inter-national Conference on Learning , 2015. 28 [45] J. Austin, D. D. Johnson, J. Ho, D. Tarlow, and R. Van Den Berg, “Structured denoising di ff usion models in discrete state-spaces,” Advances in neural informa-tion processing systems , vol. 34, pp. 17981–17993, 2021. [46] J. Ho, A. Jain, and P. Abbeel, “Denoising di ff usion probabilistic models,” Ad-vances in neural information processing systems , vol. 33, pp. 6840–6851, 2020. [47] T. Karras, M. Aittala, T. Aila, and S. Laine, “Elucidating the design space of di ff usion-based generative models,” Advances in neural information processing systems , vol. 35, pp. 26565–26577, 2022. 29
