@@ -431,17 +431,21 @@ def main() -> None:
 
   api_key = os.getenv("BLT_API_KEY")
   if not api_key:
-    raise RuntimeError("缺少 BLT_API_KEY 环境变量，无法调用 BLT Rerank API。")
-
+      log("[WARN] BLT_API_KEY 未设置，跳过 Rerank，直接将 RRF 结果复制到输出。")
+      import shutil
+      os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+      shutil.copy2(input_path, output_path)
+      log(f"[INFO] 已将 RRF 结果直接写入：{output_path}")
+      return
+  
   reranker = BltClient(api_key=api_key, model=args.rerank_model)
   process_file(
-    reranker=reranker,
-    input_path=input_path,
-    output_path=output_path,
-    top_n=args.top_n,
-    rerank_model=args.rerank_model,
+      reranker=reranker,
+      input_path=input_path,
+      output_path=output_path,
+      top_n=args.top_n,
+      rerank_model=args.rerank_model,
   )
-
 
 if __name__ == "__main__":
   main()
