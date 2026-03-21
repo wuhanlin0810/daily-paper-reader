@@ -322,12 +322,16 @@ def process_file(
         log(
           f"[INFO] 发送批次 {batch_idx}/{len(batches)} | docs={len(batch_docs)}"
         )
-        response = reranker.rerank(
-          query=q_text,
-          documents=batch_docs,
-          top_n=len(batch_docs),
-          model=rerank_model,
-        )
+        try:
+          response = reranker.rerank(
+            query=q_text,
+            documents=batch_docs,
+            top_n=len(batch_docs),
+            model=rerank_model,
+          )
+        except Exception as e:
+          log(f"[WARN] Rerank API 调用失败（{e}），跳过本批次，将使用 RRF 分数。")
+          break
         if isinstance(response, dict) and "output" in response:
           results = response.get("output", {}).get("results", [])
         else:
@@ -439,13 +443,20 @@ def main() -> None:
       return
   
   reranker = BltClient(api_key=api_key, model=args.rerank_model)
-  process_file(
-      reranker=reranker,
-      input_path=input_path,
-      output_path=output_path,
-      top_n=args.top_n,
-      rerank_model=args.rerank_model,
-  )
+  try:
+    process_file(
+        reranker=reranker,
+        input_path=input_path,
+        output_path=output_path,
+        top_n=args.top_n,
+        rerank_model=args.rerank_model,
+    )
+  except Exception as e:
+    log(f"[WARN] Rerank 整体失败（{e}），直接将 RRF 结果复制到输出。")
+    import shutil
+    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+    shutil.copy2(input_path, output_path)
+    log(f"[INFO] 已将 RRF 结果直接写入：{output_path}")
 
 if __name__ == "__main__":
   main()
